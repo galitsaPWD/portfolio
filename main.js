@@ -237,13 +237,24 @@ document.addEventListener('DOMContentLoaded', () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         try {
-            const response = await fetch('/api/chat', {
+            // Determine the API endpoint with a fallback for local testing vs production
+            const endpoint = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                ? '/.netlify/functions/chat'
+                : '/api/chat';
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ messages: conversationHistory })
             });
 
             chatMessages.removeChild(thinkingDiv);
+
+            if (response.status === 404) {
+                console.error('Chat API Not Found (404). Check netlify.toml or if netlify dev is running.');
+                addMessage("i can't find the signal. are we in the right place?", 'ai');
+                return;
+            }
 
             if (!response.ok) {
                 // Handle different types of errors
