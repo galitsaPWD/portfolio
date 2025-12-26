@@ -165,11 +165,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const aiModal = document.getElementById('ai-modal');
     const openChatBtn = document.getElementById('open-ai-chat');
     const closeChatBtn = document.getElementById('close-ai-chat');
+    const chatInput = document.getElementById('chat-input');
+    const chatMessages = document.getElementById('chat-messages');
+    const chatSend = document.getElementById('chat-send');
 
     const toggleModal = (show) => {
         if (show) {
             aiModal.classList.add('active');
-            chatInput.focus();
+            if (chatInput) chatInput.focus();
         } else {
             aiModal.classList.remove('active');
         }
@@ -180,44 +183,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Close on escape
     window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && aiModal.classList.contains('active')) toggleModal(false);
+        if (e.key === 'Escape' && aiModal && aiModal.classList.contains('active')) toggleModal(false);
     });
 
-    // AI Assistant - Intentional Persona
-    const chatMessages = document.getElementById('chat-messages');
-    const chatInput = document.getElementById('chat-input');
-    const chatSend = document.getElementById('chat-send');
-
-    const assistantProfile = {
-        intro: "i build things to feel something. i like quiet, atmospheric projects—websites that don’t scream for attention but stay with you after you close the tab.",
-        workStyle: "i work with code the same way i write: slow, intentional, and a little emotional. most of my projects start as questions—about people, loneliness, presence, and meaning—and end up as experiences instead of products.",
-        sonder: "sonder started as a reminder: everyone is carrying something unseen. it’s a quiet space where words exist without names, without permanence—meant to be felt, not judged. messages fade, just like moments do.",
-        embers: "embers was born from late nights, silence, and the idea of sitting around a fire with strangers who don’t need to explain themselves. messages burn. nothing is archived. it’s not about conversation—it’s about presence.",
-        contact: "reach out at crm.is.dev@gmail.com. i'm open to collaborations, conversations, or quiet ideas.",
-        tech: "i use simple tools to build deep things—html, css, javascript, firebase/supabase, three.js. i focus on concept-driven projects rather than trends.",
-        default: "i like quiet ideas. we can talk about sonder, embers, or why i build things the way i do."
-    };
+    // AI assistant logic
+    let conversationHistory = [];
 
     const addMessage = (text, sender) => {
         const msgDiv = document.createElement('div');
         msgDiv.classList.add('message', sender);
-        msgDiv.innerHTML = `<p>${text.toLowerCase()}</p>`; // Intentional lowercase style
+        msgDiv.innerHTML = `<p>${text.toLowerCase()}</p>`;
         chatMessages.appendChild(msgDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
     };
-
-    const getAIResponse = (input) => {
-        const lowerInput = input.toLowerCase();
-        if (lowerInput.includes('sonder')) return assistantProfile.sonder;
-        if (lowerInput.includes('embers')) return assistantProfile.embers;
-        if (lowerInput.includes('skill') || lowerInput.includes('tech') || lowerInput.includes('stack')) return assistantProfile.tech;
-        if (lowerInput.includes('why') || lowerInput.includes('how') || lowerInput.includes('work')) return assistantProfile.workStyle;
-        if (lowerInput.includes('email') || lowerInput.includes('contact') || lowerInput.includes('reach')) return assistantProfile.contact;
-        if (lowerInput.includes('hello') || lowerInput.includes('who') || lowerInput.includes('intro')) return assistantProfile.intro;
-        return assistantProfile.default;
-    };
-
-    let conversationHistory = [];
 
     const handleChat = async () => {
         const text = chatInput.value.trim();
@@ -226,10 +204,8 @@ document.addEventListener('DOMContentLoaded', () => {
         addMessage(text, 'user');
         chatInput.value = '';
 
-        // Add to history
         conversationHistory.push({ role: 'user', parts: [{ text: text.toLowerCase() }] });
 
-        // Show thinking state
         const thinkingDiv = document.createElement('div');
         thinkingDiv.classList.add('message', 'ai', 'thinking');
         thinkingDiv.innerHTML = `<p>...</p>`;
@@ -238,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const VERSION = "v3.0 (Direct)";
-            const API_KEY = 'AIzaSyBqGm1WwmLmDfiIT-71Urd7LL0W_Sy3Mgs'; // Restricted key
+            const API_KEY = 'AIzaSyBqGm1WwmLmDfiIT-71Urd7LL0W_Sy3Mgs';
             const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
             const response = await fetch(API_URL, {
@@ -252,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
             });
 
-            chatMessages.removeChild(thinkingDiv);
+            if (thinkingDiv && thinkingDiv.parentNode) chatMessages.removeChild(thinkingDiv);
 
             if (!response.ok) {
                 console.error(`[Chat ${VERSION}] Error:`, response.status);

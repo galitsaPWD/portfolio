@@ -470,6 +470,18 @@ textarea.form-input {
     box-shadow: 0 0 20px var(--accent-cyan);
 }
 
+/* Footer */
+footer {
+    padding: 4rem 10% 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--glass-border);
+    margin-top: 6rem;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
 /* AI Modal & Chat Window */
 .ai-modal {
     position: fixed;
@@ -660,18 +672,6 @@ textarea.form-input {
 #chat-send svg {
     width: 14px;
     height: 14px;
-}
-
-/* Footer */
-footer {
-    padding: 4rem 10% 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-top: 1px solid var(--glass-border);
-    margin-top: 6rem;
-    color: var(--text-secondary);
-    font-size: 0.85rem;
 }
 
 /* Responsiveness */
