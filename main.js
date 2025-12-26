@@ -213,9 +213,9 @@ document.addEventListener('DOMContentLoaded', () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         try {
-            const VERSION = "v3.0 (Direct)";
+            const VERSION = "v3.1 (Latest)";
             const API_KEY = 'AIzaSyBqGm1WwmLmDfiIT-71Urd7LL0W_Sy3Mgs';
-            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`;
 
             const response = await fetch(API_URL, {
                 method: 'POST',
