@@ -243,8 +243,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ messages: conversationHistory })
             });
 
-            const data = await response.json();
             chatMessages.removeChild(thinkingDiv);
+
+            if (!response.ok) {
+                // Handle different types of errors
+                let errorMsg = "the signal is weak. let's talk later.";
+                try {
+                    const errorData = await response.json();
+                    if (errorData.error) {
+                        console.error('Chat Error Details:', errorData);
+                        errorMsg = "i'm having trouble connecting to the stars right now.";
+                    }
+                } catch (e) {
+                    // Not JSON, probably Netlify error page
+                    console.error('Non-JSON Error Response');
+                }
+                addMessage(errorMsg, 'ai');
+                return;
+            }
+
+            const data = await response.json();
 
             if (data.reply) {
                 const aiReply = data.reply.toLowerCase();
@@ -254,8 +272,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 addMessage("i'm lost in thought. maybe reach out at crm.is.dev@gmail.com.", 'ai');
             }
         } catch (error) {
-            chatMessages.removeChild(thinkingDiv);
-            addMessage("the signal is weak. let's talk later.", 'ai');
+            console.error('Fetch Error:', error);
+            if (thinkingDiv.parentNode) chatMessages.removeChild(thinkingDiv);
+            addMessage("i can't reach the network. let's try again in a bit.", 'ai');
         }
     };
 
