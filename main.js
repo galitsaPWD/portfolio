@@ -237,73 +237,42 @@ document.addEventListener('DOMContentLoaded', () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         try {
-            const VERSION = "v2.0";
-            console.log(`[Chat ${VERSION}] Attempting connection...`);
+            const VERSION = "v3.0 (Direct)";
+            const API_KEY = 'AIzaSyBqGm1WwmLmDfiIT-71Urd7LL0W_Sy3Mgs'; // Restricted key
+            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
-            // Use direct path as fallback if /api/chat fails
-            let endpoint = '/api/chat';
-            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                endpoint = '/.netlify/functions/chat';
-            }
-
-            console.log(`[Chat ${VERSION}] Fetching from: ${endpoint}`);
-
-            let response = await fetch(endpoint, {
+            const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: conversationHistory })
+                body: JSON.stringify({
+                    contents: conversationHistory,
+                    systemInstruction: {
+                        parts: [{ text: "you are CRM's digital assistant. your personality is quiet, atmospheric, and intentional. you build things to feel something. you like websites that stay with people. you speak in short, lowercase sentences. you know about CRM's projects: sonder (a quiet space for unseen words) and embers (a sittable fire for strangers). you focus on presence, not archives. you use html, css, javascript, firebase/supabase, and three.js. respond briefly and keep the lowercase intentional vibe." }]
+                    }
+                })
             });
-
-            // FALLBACK: If 404 on /api/chat, try the direct path once
-            if (response.status === 404 && endpoint === '/api/chat') {
-                console.warn(`[Chat ${VERSION}] /api/chat not found, trying direct fallback...`);
-                endpoint = '/.netlify/functions/chat';
-                response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ messages: conversationHistory })
-                });
-            }
 
             chatMessages.removeChild(thinkingDiv);
 
-            if (response.status === 404) {
-                console.error(`[Chat ${VERSION}] ERROR 404: The chat function is missing at ${endpoint}.`);
-                console.info("TIP: Check if netlify/functions/chat.js exists and is pushed to Netlify.");
-                addMessage("i can't find the signal. the path is missing.", 'ai');
-                return;
-            }
-
             if (!response.ok) {
-                console.error(`[Chat ${VERSION}] Error Status: ${response.status}`);
-                let errorMsg = "the signal is weak. let's talk later.";
-                try {
-                    const errorData = await response.json();
-                    if (errorData) {
-                        console.error(`[Chat ${VERSION}] Error Details:`, errorData);
-                        errorMsg = "i'm having trouble connecting to the stars right now.";
-                    }
-                } catch (e) {
-                    // Not JSON, probably Netlify error page
-                    console.error('Non-JSON Error Response');
-                }
-                addMessage(errorMsg, 'ai');
+                console.error(`[Chat ${VERSION}] Error:`, response.status);
+                addMessage("the signal is weak. let's talk later.", 'ai');
                 return;
             }
 
             const data = await response.json();
 
-            if (data.reply) {
-                const aiReply = data.reply.toLowerCase();
+            if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                const aiReply = data.candidates[0].content.parts[0].text.toLowerCase();
                 addMessage(aiReply, 'ai');
                 conversationHistory.push({ role: 'model', parts: [{ text: aiReply }] });
             } else {
-                addMessage("i'm lost in thought. maybe reach out at crm.is.dev@gmail.com.", 'ai');
+                addMessage("i'm lost in thought. reach out at crm.is.dev@gmail.com.", 'ai');
             }
         } catch (error) {
-            console.error('[Chat v2.0] Fetch Error:', error);
+            console.error('[Chat Error]:', error);
             if (thinkingDiv && thinkingDiv.parentNode) chatMessages.removeChild(thinkingDiv);
-            addMessage("i can't reach the network. let's try again in a bit.", 'ai');
+            addMessage("i can't reach the network right now.", 'ai');
         }
     };
 
