@@ -237,32 +237,50 @@ document.addEventListener('DOMContentLoaded', () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         try {
-            // Determine the API endpoint with a fallback for local testing vs production
-            const endpoint = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-                ? '/.netlify/functions/chat'
-                : '/api/chat';
+            const VERSION = "v2.0";
+            console.log(`[Chat ${VERSION}] Attempting connection...`);
 
-            const response = await fetch(endpoint, {
+            // Use direct path as fallback if /api/chat fails
+            let endpoint = '/api/chat';
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                endpoint = '/.netlify/functions/chat';
+            }
+
+            console.log(`[Chat ${VERSION}] Fetching from: ${endpoint}`);
+
+            let response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ messages: conversationHistory })
             });
 
+            // FALLBACK: If 404 on /api/chat, try the direct path once
+            if (response.status === 404 && endpoint === '/api/chat') {
+                console.warn(`[Chat ${VERSION}] /api/chat not found, trying direct fallback...`);
+                endpoint = '/.netlify/functions/chat';
+                response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages: conversationHistory })
+                });
+            }
+
             chatMessages.removeChild(thinkingDiv);
 
             if (response.status === 404) {
-                console.error('Chat API Not Found (404). Check netlify.toml or if netlify dev is running.');
-                addMessage("i can't find the signal. are we in the right place?", 'ai');
+                console.error(`[Chat ${VERSION}] ERROR 404: The chat function is missing at ${endpoint}.`);
+                console.info("TIP: Check if netlify/functions/chat.js exists and is pushed to Netlify.");
+                addMessage("i can't find the signal. the path is missing.", 'ai');
                 return;
             }
 
             if (!response.ok) {
-                // Handle different types of errors
+                console.error(`[Chat ${VERSION}] Error Status: ${response.status}`);
                 let errorMsg = "the signal is weak. let's talk later.";
                 try {
                     const errorData = await response.json();
-                    if (errorData.error) {
-                        console.error('Chat Error Details:', errorData);
+                    if (errorData) {
+                        console.error(`[Chat ${VERSION}] Error Details:`, errorData);
                         errorMsg = "i'm having trouble connecting to the stars right now.";
                     }
                 } catch (e) {
@@ -283,8 +301,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 addMessage("i'm lost in thought. maybe reach out at crm.is.dev@gmail.com.", 'ai');
             }
         } catch (error) {
-            console.error('Fetch Error:', error);
-            if (thinkingDiv.parentNode) chatMessages.removeChild(thinkingDiv);
+            console.error('[Chat v2.0] Fetch Error:', error);
+            if (thinkingDiv && thinkingDiv.parentNode) chatMessages.removeChild(thinkingDiv);
             addMessage("i can't reach the network. let's try again in a bit.", 'ai');
         }
     };
