@@ -161,13 +161,194 @@ document.addEventListener('DOMContentLoaded', () => {
         observer.observe(el);
     });
 
-    // Modal Toggle Logic
+    // --- Pseudo-Gemini Local AI Engine ---
     const aiModal = document.getElementById('ai-modal');
     const openChatBtn = document.getElementById('open-ai-chat');
     const closeChatBtn = document.getElementById('close-ai-chat');
     const chatInput = document.getElementById('chat-input');
     const chatMessages = document.getElementById('chat-messages');
     const chatSend = document.getElementById('chat-send');
+
+    let isTyping = false;
+    let currentTopic = null;
+
+    const intents = {
+        GREETING: {
+            patterns: [/hi/i, /hello/i, /hey/i, /yo/i, /greet/i],
+            responses: [
+                "welcome. i am his assistant. how can i help you explore his work?",
+                "hey. i am here to guide you through his creations. what is on your mind?",
+                "i am his digital presence. he is busy creating, but i can tell you anything about his work."
+            ]
+        },
+        SONDER: {
+            patterns: [/sonder/i, /unseen/i, /words/i, /poetry/i],
+            responses: [
+                "sonder is a quiet space he built for unseen words. it is a home for the things people feel but never say.",
+                "he created sonder to be atmospheric. it is a repository of poetry and quiet moments. would you like to know how he built it?",
+                "sonder is one of his favorite projects. a minimal, immersive experience for the soul."
+            ],
+            topic: 'sonder'
+        },
+        EMBERS: {
+            patterns: [/embers/i, /fire/i, /strangers/i, /sitting/i],
+            responses: [
+                "embers is a sittable fire he built for strangers. it is about warmth and temporary connection.",
+                "he designed embers as a digital campfire. a place to rest your mind for a few minutes.",
+                "embers live on a separate horizon. he used three.js to give the fire its life."
+            ],
+            topic: 'embers'
+        },
+        HOW_BUILD: {
+            patterns: [/how/i, /built/i, /made/i, /technologies/i, /stack/i],
+            responses: {
+                sonder: [
+                    "he built sonder using vanilla javascript and a very specific css grid system for that minimal flow.",
+                    "he used firebase for the real-time word persistence and a custom horizontal scroll engine.",
+                    "it is purely a frontend masterpiece with a light database backend he tuned for speed."
+                ],
+                embers: [
+                    "embers uses three.js for the 3d environment. he spent nights tuning the flicker of those particles.",
+                    "it uses a socket-based system so you can see other strangers sitting by the fire with you.",
+                    "the fire physics in embers are custom-coded. he wanted it to feel organic, not looped."
+                ],
+                default: [
+                    "he builds with a core of html, css, and javascript. but his heart is in the animations, often using three.js or gsap.",
+                    "his stack is minimal but powerful: three.js, firebase, and intentional design.",
+                    "everything you see is handcrafted. he avoids bloated frameworks to keep the load times fast and the feel atmospheric."
+                ]
+            }
+        },
+        PHILOSOPHY: {
+            patterns: [/philosophy/i, /why/i, /intentional/i, /design/i, /style/i],
+            responses: [
+                "he believes websites should stay with people. they shouldn't just be tools; they should be memories.",
+                "his design philosophy is 'quiet presence'. less noise, more feeling.",
+                "he builds to make people feel something. if a site is just functional, he thinks it is unfinished."
+            ]
+        },
+        CONTACT: {
+            patterns: [/contact/i, /hire/i, /email/i, /talk/i],
+            responses: [
+                "you can reach him at crm.is.dev@gmail.com. he reads every message.",
+                "he is always open to collaborative quietness. hit him up at crm.is.dev@gmail.com.",
+                "use the form right behind this chat, or send an email to crm.is.dev@gmail.com. he will find you."
+            ]
+        },
+        WHO: {
+            patterns: [/who/i, /crm/i, /creator/i, /master/i, /you/i],
+            responses: [
+                "i am his pseudo-ai assistant. he is CRM, a creator of quiet digital spaces.",
+                "CRM is my master. he scales the technical heights so i can sit here and talk to you.",
+                "he is a dreamer who codes. i am just the voice he left here to welcome you."
+            ]
+        }
+    };
+
+    // --- Pseudo-Gemini Logic Functions ---
+    const streamMessage = async (text) => {
+        isTyping = true;
+        const msgDiv = document.createElement('div');
+        msgDiv.classList.add('message', 'ai');
+        const p = document.createElement('p');
+        msgDiv.appendChild(p);
+        chatMessages.appendChild(msgDiv);
+
+        const chars = text.split("");
+        for (let char of chars) {
+            p.textContent += char;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            await new Promise(resolve => setTimeout(resolve, 15 + Math.random() * 25));
+        }
+        isTyping = false;
+    };
+
+    const getLocalFallback = (input) => {
+        const lowerInput = input.toLowerCase();
+
+        for (const key in intents) {
+            const intent = intents[key];
+            if (intent.patterns.some(pattern => pattern.test(lowerInput))) {
+                if (intent.topic) currentTopic = intent.topic;
+
+                if (typeof intent.responses === 'object' && !Array.isArray(intent.responses)) {
+                    const pool = intent.responses[currentTopic] || intent.responses.default;
+                    return pool[Math.floor(Math.random() * pool.length)];
+                }
+
+                return intent.responses[Math.floor(Math.random() * intent.responses.length)];
+            }
+        }
+
+        return "i don't have an answer for that yet. but i can tell you about his work on sonder or embers. ask me anything.";
+    };
+
+    const getAIResponse = async (userMessage) => {
+        const HF_API_KEY = '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';
+        const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+        const API_URL = CORS_PROXY + encodeURIComponent('https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2');
+
+        const systemPrompt = "You are CRM's digital assistant. He is a creator of quiet digital spaces. Speak in short, lowercase, atmospheric sentences. He built SONDER (a space for unseen words) and Embers (a digital campfire for strangers). You refer to his work in third person ('his work', 'he built'). Be brief, intentional, and poetic. Never use capital letters except for project names.";
+
+        const prompt = `<s>[INST] ${systemPrompt}\n\nUser: ${userMessage} [/INST]`;
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${HF_API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    inputs: prompt,
+                    parameters: {
+                        max_new_tokens: 150,
+                        temperature: 0.7,
+                        top_p: 0.9,
+                        return_full_text: false
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                console.warn('[HF API] Failed, using local fallback');
+                return getLocalFallback(userMessage);
+            }
+
+            const data = await response.json();
+
+            if (data[0] && data[0].generated_text) {
+                return data[0].generated_text.trim().toLowerCase();
+            } else if (data.error) {
+                console.warn('[HF API] Error:', data.error);
+                return getLocalFallback(userMessage);
+            }
+
+            return getLocalFallback(userMessage);
+        } catch (error) {
+            console.error('[HF API] Network error:', error);
+            return getLocalFallback(userMessage);
+        }
+    };
+
+    const handleChat = async () => {
+        if (isTyping) return;
+        const text = chatInput.value.trim();
+        if (!text) return;
+
+        // User message
+        const userMsg = document.createElement('div');
+        userMsg.classList.add('message', 'user');
+        userMsg.innerHTML = `<p>${text.toLowerCase()}</p>`;
+        chatMessages.appendChild(userMsg);
+        chatInput.value = '';
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        // AI Response (with thinking delay)
+        await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
+        const response = await getAIResponse(text);
+        await streamMessage(response);
+    };
 
     const toggleModal = (show) => {
         if (show) {
@@ -178,86 +359,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Event Listeners
     if (openChatBtn) openChatBtn.addEventListener('click', () => toggleModal(true));
     if (closeChatBtn) closeChatBtn.addEventListener('click', () => toggleModal(false));
-
-    // Close on escape
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && aiModal && aiModal.classList.contains('active')) toggleModal(false);
-    });
-
-    // AI assistant logic
-    let conversationHistory = [];
-
-    const addMessage = (text, sender) => {
-        const msgDiv = document.createElement('div');
-        msgDiv.classList.add('message', sender);
-        msgDiv.innerHTML = `<p>${text.toLowerCase()}</p>`;
-        chatMessages.appendChild(msgDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    };
-
-    const handleChat = async () => {
-        const text = chatInput.value.trim();
-        if (!text) return;
-
-        addMessage(text, 'user');
-        chatInput.value = '';
-
-        conversationHistory.push({ role: 'user', parts: [{ text: text.toLowerCase() }] });
-
-        const thinkingDiv = document.createElement('div');
-        thinkingDiv.classList.add('message', 'ai', 'thinking');
-        thinkingDiv.innerHTML = `<p>...</p>`;
-        chatMessages.appendChild(thinkingDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-
-        try {
-            const VERSION = "v3.1 (Latest)";
-            const API_KEY = 'AIzaSyBqGm1WwmLmDfiIT-71Urd7LL0W_Sy3Mgs';
-            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`;
-
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: conversationHistory,
-                    systemInstruction: {
-                        parts: [{ text: "you are CRM's digital assistant. your personality is quiet, atmospheric, and intentional. you build things to feel something. you like websites that stay with people. you speak in short, lowercase sentences. you know about CRM's projects: sonder (a quiet space for unseen words) and embers (a sittable fire for strangers). you focus on presence, not archives. you use html, css, javascript, firebase/supabase, and three.js. respond briefly and keep the lowercase intentional vibe." }]
-                    }
-                })
-            });
-
-            if (thinkingDiv && thinkingDiv.parentNode) chatMessages.removeChild(thinkingDiv);
-
-            if (!response.ok) {
-                console.error(`[Chat ${VERSION}] Error:`, response.status);
-                addMessage("the signal is weak. let's talk later.", 'ai');
-                return;
-            }
-
-            const data = await response.json();
-
-            if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-                const aiReply = data.candidates[0].content.parts[0].text.toLowerCase();
-                addMessage(aiReply, 'ai');
-                conversationHistory.push({ role: 'model', parts: [{ text: aiReply }] });
-            } else {
-                addMessage("i'm lost in thought. reach out at crm.is.dev@gmail.com.", 'ai');
-            }
-        } catch (error) {
-            console.error('[Chat Error]:', error);
-            if (thinkingDiv && thinkingDiv.parentNode) chatMessages.removeChild(thinkingDiv);
-            addMessage("i can't reach the network right now.", 'ai');
-        }
-    };
-
-    if (chatSend) {
-        chatSend.addEventListener('click', handleChat);
+    if (chatSend) chatSend.addEventListener('click', handleChat);
+    if (chatInput) {
         chatInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') handleChat();
         });
     }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && aiModal && aiModal.classList.contains('active')) toggleModal(false);
+    });
 
     // Contact Form Handler
     const contactForm = document.getElementById('contact-form');
