@@ -16,9 +16,15 @@
 </head>
 
 <body>
+    <div id="loader">
+        <canvas id="loader-canvas"></canvas>
+        <div class="loader-text">Loading System...</div>
+    </div>
+
     <div class="scroll-lines"></div>
     <div class="cursor-dot"></div>
     <div class="cursor-outline"></div>
+    <canvas id="hero-canvas"></canvas>
 
     <header class="glass-header">
         <div class="logo">CRM</div>
@@ -27,10 +33,11 @@
                 <li><a href="#hero" class="active">Home</a></li>
                 <li><a href="#work">Work</a></li>
                 <li><a href="#about">About</a></li>
-                <li><a href="#contact">Contact</a></li>
+                <li><a href="#contact-box">Contact</a></li>
             </ul>
         </nav>
-        <button class="cta-button" id="open-ai-chat">Let's Talk</button>
+
+        <button class="cta-button magnetic-btn" id="open-ai-chat">Let's Talk</button>
     </header>
 
     <main>
@@ -44,9 +51,7 @@
                     <a href="#about" class="btn secondary">Read Bio</a>
                 </div>
             </div>
-            <div class="hero-visual">
-                <canvas id="hero-canvas"></canvas>
-            </div>
+
         </section>
 
         <section id="work">
@@ -104,18 +109,18 @@
                         interfaces that are not just functional, but memorable.</p>
                 </div>
                 <div class="skills-vis">
-                    <div class="skill-item cursor-hover">HTML5 & CSS3</div>
-                    <div class="skill-item cursor-hover">JavaScript (ES6+)</div>
-                    <div class="skill-item cursor-hover">React</div>
-                    <div class="skill-item cursor-hover">Vue.js</div>
-                    <div class="skill-item cursor-hover">UI / UX Design</div>
+                    <div class="skill-item cursor-hover" style="--level: 95%" data-level="95%">HTML5 & CSS3</div>
+                    <div class="skill-item cursor-hover" style="--level: 90%" data-level="90%">JavaScript (ES6+)</div>
+                    <div class="skill-item cursor-hover" style="--level: 60%" data-level="60%">React</div>
+                    <div class="skill-item cursor-hover" style="--level: 55%" data-level="55%">Vue.js</div>
+                    <div class="skill-item cursor-hover" style="--level: 90%" data-level="90%">UI / UX Design</div>
                 </div>
             </div>
         </section>
 
         <section id="contact">
             <h2>Get In Touch</h2>
-            <div class="contact-container">
+            <div class="contact-container" id="contact-box">
                 <form id="contact-form" action="https://formspree.io/f/xkonjjay" method="POST">
 
 

@@ -1,4 +1,76 @@
 document.addEventListener('DOMContentLoaded', () => {
+
+    // 3D LOADER LOGIC
+
+    const initLoader3D = () => {
+        const loaderCanvas = document.getElementById('loader-canvas');
+        if (!loaderCanvas) return;
+
+        const renderer = new THREE.WebGLRenderer({ canvas: loaderCanvas, alpha: true, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.z = 5;
+
+        // Loader Object: Wireframe Octahedron
+        const geometry = new THREE.OctahedronGeometry(1.5, 0);
+        const material = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.5
+        });
+        const loaderMesh = new THREE.Mesh(geometry, material);
+        scene.add(loaderMesh);
+
+        // Animation Loop
+        let animationId;
+        const animateLoader = () => {
+            animationId = requestAnimationFrame(animateLoader);
+            loaderMesh.rotation.x += 0.02;
+            loaderMesh.rotation.y += 0.03;
+            // Pulse effect
+            const time = Date.now() * 0.002;
+            loaderMesh.scale.setScalar(1 + Math.sin(time) * 0.1);
+            renderer.render(scene, camera);
+        };
+        animateLoader();
+
+        // Cleanup function
+        const cleanupLoader = () => {
+            cancelAnimationFrame(animationId);
+            renderer.dispose();
+            geometry.dispose();
+            material.dispose();
+        };
+
+        // Window Resize for Loader
+        const handleResize = () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        };
+        window.addEventListener('resize', handleResize);
+
+        // Hide Loader on Window Load
+        window.addEventListener('load', () => {
+            const loader = document.getElementById('loader');
+            if (loader) {
+                setTimeout(() => {
+                    loader.style.opacity = '0';
+                    setTimeout(() => {
+                        loader.style.visibility = 'hidden';
+                        cleanupLoader(); // Kill the 3D process
+                        window.removeEventListener('resize', handleResize);
+                    }, 500);
+                }, 1500); // Keep it visible for at least 1.5s to show off effect
+            }
+        });
+    };
+    initLoader3D();
+
     // Scroll Lines Parallax
     const scrollLines = document.querySelector('.scroll-lines');
     if (scrollLines) {
@@ -14,6 +86,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!canvas) return;
 
         const scene = new THREE.Scene();
+        // Fog for depth (Black ending)
+        scene.fog = new THREE.FogExp2(0x080808, 0.002);
+
         const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({
             canvas: canvas,
@@ -24,69 +99,155 @@ document.addEventListener('DOMContentLoaded', () => {
         renderer.setSize(canvas.clientWidth, canvas.clientHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-        // Geometry: Wireframe Icosahedron
-        const geometry = new THREE.IcosahedronGeometry(15, 2);
+        const geometry = new THREE.IcosahedronGeometry(13, 2);
         const material = new THREE.MeshBasicMaterial({
             color: 0xe0e0e0, // Platinum/Silver
             wireframe: true,
             transparent: true,
-            opacity: 0.3
+            opacity: 0.2 // Slightly more subtle to blend with network
         });
-
         const sphere = new THREE.Mesh(geometry, material);
         scene.add(sphere);
 
-        // Add some particles around it
-        const particlesGeometry = new THREE.BufferGeometry();
-        const particlesCount = 200;
-        const posArray = new Float32Array(particlesCount * 3);
 
-        for (let i = 0; i < particlesCount * 3; i++) {
-            posArray[i] = (Math.random() - 0.5) * 50;
+        const particleCount = 100;
+        const particles = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const velocities = [];
+
+        // Spread particles wider to fill background
+        for (let i = 0; i < particleCount; i++) {
+            positions[i * 3] = (Math.random() - 0.5) * 150;
+            positions[i * 3 + 1] = (Math.random() - 0.5) * 150;
+            positions[i * 3 + 2] = (Math.random() - 0.5) * 100 - 20; // Push slightly back
+
+            velocities.push({
+                x: (Math.random() - 0.5) * 0.05,
+                y: (Math.random() - 0.5) * 0.05,
+                z: (Math.random() - 0.5) * 0.05
+            });
         }
 
-        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-        const particlesMaterial = new THREE.PointsMaterial({
-            size: 0.05,
-            color: 0x888888,
+        particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        const particleMaterial = new THREE.PointsMaterial({
+            color: 0x888888, // Grey to match sphere
+            size: 0.4,
             transparent: true,
-            opacity: 0.5
+            opacity: 0.6,
+            blending: THREE.AdditiveBlending
         });
 
-        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
-        scene.add(particlesMesh);
+        const particleSystem = new THREE.Points(particles, particleMaterial);
+        scene.add(particleSystem);
 
-        camera.position.z = 30;
+        // Lines (Connections)
+        const lineMaterial = new THREE.LineBasicMaterial({
+            color: 0x888888, // Grey lines
+            transparent: true,
+            opacity: 0.1
+        });
 
-        // Mouse Parallax
+        const linesGeometry = new THREE.BufferGeometry();
+        const lineSystem = new THREE.LineSegments(linesGeometry, lineMaterial);
+        scene.add(lineSystem);
+
+        camera.position.z = 50;
+
+        // Mouse Interaction
         let mouseX = 0;
         let mouseY = 0;
 
-        // Use existing mousemove if possible, or add new one. 
-        // Since we have a global mousemove listener below, let's just use a variable or add here.
         document.addEventListener('mousemove', (event) => {
-            mouseX = event.clientX / window.innerWidth - 0.5;
-            mouseY = event.clientY / window.innerHeight - 0.5;
+            mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
         });
 
         const animate = () => {
             requestAnimationFrame(animate);
 
-            // Rotation
+            // Sphere Animation
             sphere.rotation.y += 0.002;
             sphere.rotation.x += 0.001;
-            particlesMesh.rotation.y -= 0.0005;
 
-            // Parallax easing
+            // Sphere Mouse Parallax
             sphere.rotation.y += 0.05 * (mouseX - sphere.rotation.y * 0.05);
-            sphere.rotation.x += 0.05 * (mouseY - sphere.rotation.x * 0.05);
+            sphere.rotation.x += 0.05 * (-mouseY - sphere.rotation.x * 0.05);
+
+            // Particle System Update
+            const positions = particleSystem.geometry.attributes.position.array;
+
+            for (let i = 0; i < particleCount; i++) {
+                const range = 80;
+                positions[i * 3] += velocities[i].x;
+                positions[i * 3 + 1] += velocities[i].y;
+                positions[i * 3 + 2] += velocities[i].z;
+
+                if (Math.abs(positions[i * 3]) > range) velocities[i].x *= -1;
+                if (Math.abs(positions[i * 3 + 1]) > range) velocities[i].y *= -1;
+                if (Math.abs(positions[i * 3 + 2]) > range) velocities[i].z *= -1;
+            }
+            particleSystem.geometry.attributes.position.needsUpdate = true;
+
+            // Rebuild Lines
+            const linePositions = [];
+            const connectDistance = 20;
+
+            for (let i = 0; i < particleCount; i++) {
+                for (let j = i + 1; j < particleCount; j++) {
+                    const dx = positions[i * 3] - positions[j * 3];
+                    const dy = positions[i * 3 + 1] - positions[j * 3 + 1];
+                    const dz = positions[i * 3 + 2] - positions[j * 3 + 2];
+                    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+                    if (dist < connectDistance) {
+                        linePositions.push(
+                            positions[i * 3], positions[i * 3 + 1], positions[i * 3 + 2],
+                            positions[j * 3], positions[j * 3 + 1], positions[j * 3 + 2]
+                        );
+                    }
+                }
+            }
+            linesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+
+            // Background Rotation
+            particleSystem.rotation.y += 0.0005;
+            lineSystem.rotation.y += 0.0005;
+
+            // Camera Parallax (Mouse)
+            camera.position.x += (mouseX * 5 - camera.position.x) * 0.05;
+            camera.position.y += (-mouseY * 5 - camera.position.y) * 0.05;
+
+            camera.lookAt(scene.position);
 
             renderer.render(scene, camera);
         };
 
         animate();
 
-        // Handle Resize
+        // SCROLLSYNC (Split Behavior)
+        // 1. Sphere behaves like Hero Content (Scrolls UP and away)
+        // 2. Background behaves like Fixed Global (Zooms smoothly)
+        window.addEventListener('scroll', () => {
+            const scrollY = window.scrollY;
+
+            // Move Sphere UP to simulate it scrolling away with the hero section
+            // Factor 0.05 is calibrated to match scroll speed roughly
+            sphere.position.y = scrollY * 0.05;
+
+            // Rotate Sphere for flair
+            sphere.rotation.x = scrollY * 0.002;
+            sphere.rotation.z = scrollY * 0.002;
+
+            // Background Zoom Effect (Camera moves forward)
+            // We clamp it so it doesn't go too far
+            const zoom = Math.min(scrollY * 0.05, 40); // Cap zoom at 40 units
+            camera.position.z = 50 - zoom;
+
+            // Subtle rotation for network
+            particleSystem.rotation.y = scrollY * 0.0002;
+        });
+
         window.addEventListener('resize', () => {
             camera.aspect = canvas.clientWidth / canvas.clientHeight;
             camera.updateProjectionMatrix();
@@ -132,11 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Glitch Effect Randomizer (Optional polish)
-    const glitchText = document.querySelector('.glitch');
-    if (glitchText) {
-        // We can add random character swaps here later
-    }
+
 
     // Scroll Reveal Animation
     const observerOptions = {
@@ -152,16 +309,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }, observerOptions);
 
-    const animatedElements = document.querySelectorAll('.project-card, .about-text, .skills-vis, .contact-container, section h2');
+    const animatedElements = document.querySelectorAll('.project-card, .about-text, .skills-vis, .contact-container'); // Removed h2 from here to separate logic
 
     animatedElements.forEach(el => {
         el.style.opacity = '0';
         el.style.transform = 'translateY(20px)';
         el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
         observer.observe(el);
-    })
+    });
 
-        ;
+    // Dedicated Title Glow Observer
+    const titleObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('auto-glow');
+            } else {
+                entry.target.classList.remove('auto-glow'); // Remove when out of view (optional, keeps it dynamic)
+            }
+        });
+    }, { threshold: 0.5, rootMargin: "0px 0px -100px 0px" }); // Triggers when 50% visible, offset slightly
+
+    document.querySelectorAll('section h2').forEach(h2 => {
+        titleObserver.observe(h2);
+    });
 
     // Global function to set Hugging Face API key (call in console: setHFKey('your-key'))
     window.setHFKey = (key) => {
@@ -169,9 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('[HF API] Key saved! Refresh to use real AI.');
     };
 
-    // ═══════════════════════════════════════════════════════════════
-    // AI SYSTEM - MODULAR PIPELINE ARCHITECTURE
-    // ═══════════════════════════════════════════════════════════════
+
 
     const aiModal = document.getElementById('ai-modal');
     const openChatBtn = document.getElementById('open-ai-chat');
@@ -182,22 +350,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let isTyping = false;
 
-    // ───────────────────────────────────────────────────────────────
-    // INTENT DEFINITIONS
-    // ───────────────────────────────────────────────────────────────
 
-    // ───────────────────────────────────────────────────────────────
-    // CONTEXT MANAGEMENT
-    // ───────────────────────────────────────────────────────────────
+
+
 
     let conversationContext = {
         topic: null, // 'sonder', 'embers', or null
         lastIntent: null
     };
 
-    // ───────────────────────────────────────────────────────────────
-    // INTENT DEFINITIONS
-    // ───────────────────────────────────────────────────────────────
+
 
     const intents = [
         {
@@ -417,9 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     ];
 
-    // ───────────────────────────────────────────────────────────────
-    // FALLBACK RESPONSES
-    // ───────────────────────────────────────────────────────────────
+
 
     const fallbackResponses = [
         'i am still learning. but i can tell you about sonder or embers',
@@ -428,9 +588,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'i am here for questions about his projects. what would you like to know'
     ];
 
-    // ───────────────────────────────────────────────────────────────
-    // PIPELINE STAGE 1: NORMALIZATION
-    // ───────────────────────────────────────────────────────────────
+
 
     function normalizeInput(text) {
         return text
@@ -440,9 +598,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .trim();
     }
 
-    // ───────────────────────────────────────────────────────────────
-    // PIPELINE STAGE 2: INTENT DETECTION
-    // ───────────────────────────────────────────────────────────────
+
 
     function detectIntent(normalized) {
         for (const intent of intents) {
@@ -457,9 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
     }
 
-    // ───────────────────────────────────────────────────────────────
-    // PIPELINE STAGE 3: RESPONSE SELECTION
-    // ───────────────────────────────────────────────────────────────
+
 
     function selectResponse(intentName) {
         if (!intentName) {
@@ -492,9 +646,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return responsePool[Math.floor(Math.random() * responsePool.length)];
     }
 
-    // ───────────────────────────────────────────────────────────────
-    // PIPELINE ORCHESTRATOR
-    // ───────────────────────────────────────────────────────────────
+
 
     function processMessage(input) {
         const normalized = normalizeInput(input);
@@ -660,3 +812,69 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+// ═══════════════════════════════════════════════════════════════
+// VISUAL FX
+// ═══════════════════════════════════════════════════════════════
+
+// 3D Tilt Logic
+document.querySelectorAll('.tilt-card').forEach(card => {
+    const glare = card.querySelector('.glare');
+
+    card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+
+        const rotateX = ((y - centerY) / centerY) * -10;
+        const rotateY = ((x - centerX) / centerX) * 10;
+
+        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+
+        if (glare) {
+            glare.style.opacity = '1';
+            glare.style.transform = `translateZ(1px) translateX(${(x - centerX) / 5}px) translateY(${(y - centerY) / 5}px)`;
+        }
+    });
+
+    card.addEventListener('mouseleave', () => {
+        card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+        if (glare) glare.style.opacity = '0';
+    });
+});
+
+// Magnetic Button Logic
+document.querySelectorAll('.magnetic-btn').forEach(btn => {
+    btn.addEventListener('mousemove', (e) => {
+        const rect = btn.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+        btn.style.transform = `translate(${x * 0.3}px, ${y * 0.3}px)`;
+    });
+
+    btn.addEventListener('mouseleave', () => {
+        btn.style.transform = 'translate(0px, 0px)';
+    });
+});
+
+// Mobile CTA Fade on Footer
+const ctaBtn = document.querySelector('.cta-button');
+if (ctaBtn) {
+    window.addEventListener('scroll', () => {
+        // Only run this logic on mobile (when the button is fixed)
+        if (window.innerWidth <= 768) {
+            const scrollPosition = window.innerHeight + window.scrollY;
+            const bodyHeight = document.body.offsetHeight;
+            const footerThreshold = 100; // Distance from bottom to start fading
+
+            // If we are near the bottom, hide the button
+            if (scrollPosition >= bodyHeight - footerThreshold) {
+                ctaBtn.classList.add('hidden');
+            } else {
+                ctaBtn.classList.remove('hidden');
+            }
+        }
+    });
+}
