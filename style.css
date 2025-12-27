@@ -20,10 +20,10 @@
 
 }
 
-html {
-    scroll-behavior: smooth;
-    scroll-padding-top: 100px;
-
+scroll-behavior: smooth;
+scroll-padding-top: 100px;
+overflow-x: hidden;
+/* Force prevent horizontal scroll */
 }
 
 body {
@@ -856,6 +856,26 @@ footer {
     .cursor-dot,
     .cursor-outline {
         display: none;
+    }
+
+    /* ──── MOBILE TYPOGRAPHY & SPACING FIXES ──── */
+    .hero-section {
+        padding: 0 5%;
+    }
+
+    .glitch {
+        font-size: 3.5rem;
+        /* Prevent overflow */
+    }
+
+    section {
+        padding: 4rem 5%;
+        /* More breathing room, less side padding */
+    }
+
+    section h2 {
+        font-size: 2.5rem;
+        /* Scale down titles */
     }
 }
 
