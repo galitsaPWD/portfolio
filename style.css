@@ -20,10 +20,11 @@
 
 }
 
-scroll-behavior: smooth;
-scroll-padding-top: 100px;
-overflow-x: hidden;
-/* Force prevent horizontal scroll */
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 100px;
+    overflow-x: hidden;
+    /* Force prevent horizontal scroll */
 }
 
 body {
