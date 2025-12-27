@@ -159,9 +159,20 @@ document.addEventListener('DOMContentLoaded', () => {
         el.style.transform = 'translateY(20px)';
         el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
         observer.observe(el);
-    });
+    })
 
-    // --- Pseudo-Gemini Local AI Engine ---
+        ;
+
+    // Global function to set Hugging Face API key (call in console: setHFKey('your-key'))
+    window.setHFKey = (key) => {
+        localStorage.setItem('hf_api_key', key);
+        console.log('[HF API] Key saved! Refresh to use real AI.');
+    };
+
+    // ═══════════════════════════════════════════════════════════════
+    // AI SYSTEM - MODULAR PIPELINE ARCHITECTURE
+    // ═══════════════════════════════════════════════════════════════
+
     const aiModal = document.getElementById('ai-modal');
     const openChatBtn = document.getElementById('open-ai-chat');
     const closeChatBtn = document.getElementById('close-ai-chat');
@@ -170,83 +181,339 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatSend = document.getElementById('chat-send');
 
     let isTyping = false;
-    let currentTopic = null;
 
-    const intents = {
-        GREETING: {
-            patterns: [/hi/i, /hello/i, /hey/i, /yo/i, /greet/i],
+    // ───────────────────────────────────────────────────────────────
+    // INTENT DEFINITIONS
+    // ───────────────────────────────────────────────────────────────
+
+    // ───────────────────────────────────────────────────────────────
+    // CONTEXT MANAGEMENT
+    // ───────────────────────────────────────────────────────────────
+
+    let conversationContext = {
+        topic: null, // 'sonder', 'embers', or null
+        lastIntent: null
+    };
+
+    // ───────────────────────────────────────────────────────────────
+    // INTENT DEFINITIONS
+    // ───────────────────────────────────────────────────────────────
+
+    const intents = [
+        {
+            name: 'greeting',
+            keywords: ['hi', 'hello', 'hey', 'sup', 'yo', 'howdy'],
             responses: [
-                "welcome. i am his assistant. how can i help you explore his work?",
-                "hey. i am here to guide you through his creations. what is on your mind?",
-                "i am his digital presence. he is busy creating, but i can tell you anything about his work."
+                'hi. i am cael. i am here to help you understand the work, the ideas behind it, and the thinking that shaped them. ask what you are curious about. i will answer what i can',
+                'hi. i am cael. ask what you are curious about',
+                'i am cael. here to help you understand the thinking behind this space'
             ]
         },
-        SONDER: {
-            patterns: [/sonder/i, /unseen/i, /words/i, /poetry/i],
+        {
+            name: 'identity',
+            keywords: ['who are you', 'your name', 'cael', 'what are you', 'what do you do', 'purpose', 'function'],
             responses: [
-                "sonder is a quiet space he built for unseen words. it is a home for the things people feel but never say.",
-                "he created sonder to be atmospheric. it is a repository of poetry and quiet moments. would you like to know how he built it?",
-                "sonder is one of his favorite projects. a minimal, immersive experience for the soul."
-            ],
-            topic: 'sonder'
+                'i am cael. i exist to explain the work and the ideas behind it',
+                'i am cael. just a voice for the thinking that shaped this space',
+                'my name is cael. i answer what i can'
+            ]
         },
-        EMBERS: {
-            patterns: [/embers/i, /fire/i, /strangers/i, /sitting/i],
+        {
+            name: 'sonder',
+            setsContext: 'sonder',
+            keywords: ['sonder', 'words', 'poetry', 'write', 'journal', 'unseen'],
             responses: [
-                "embers is a sittable fire he built for strangers. it is about warmth and temporary connection.",
-                "he designed embers as a digital campfire. a place to rest your mind for a few minutes.",
-                "embers live on a separate horizon. he used three.js to give the fire its life."
-            ],
-            topic: 'embers'
+                'sonder is a quiet space for unseen words. the things people feel but never say',
+                'he built sonder as a home for the margins. where strangers leave pieces of themselves',
+                'it is a digital sanctuary. minimal, immersive, intentional',
+                'sonder holds the words that live between breaths. he made it with firebase and care'
+            ]
         },
-        HOW_BUILD: {
-            patterns: [/how/i, /built/i, /made/i, /technologies/i, /stack/i],
+        {
+            name: 'embers',
+            setsContext: 'embers',
+            keywords: ['embers', 'fire', 'campfire', 'warmth', 'strangers', 'sitting'],
+            responses: [
+                'embers is a fire you can sit by. no words, just presence',
+                'he wanted to recreate that feeling of sitting by a fire late at night. quiet, warm, fleeting',
+                'it is a digital campfire for strangers. he used three.js to give it life',
+                'embers is about temporary connection. you sit, you leave, you remember'
+            ]
+        },
+        {
+            name: 'about_visitor',
+            keywords: ['myself', 'visitor', 'guest', 'who am i'],
+            responses: [
+                'you are the observer. the one looking in',
+                'you are a guest in his quiet space. stay as long as you like',
+                'you are the one sitting by the fire. i am just the reflection',
+                'you are here. that is what matters'
+            ]
+        },
+        {
+            name: 'about_creator',
+            keywords: ['who', 'carlwyne', 'creator', 'him', 'person', 'developer', 'designer', 'student', 'name'],
+            responses: [
+                'he is carlwyne. a 4th-year IT student who builds things that feel like memories',
+                'he is a dreamer who codes. i am just the voice he left here',
+                'carlwyne builds websites that stay with you after you close the tab',
+                'he creates quiet digital spaces. places that remind you the internet can still be beautiful'
+            ]
+        },
+        {
+            name: 'tech_stack',
+            keywords: ['how', 'built', 'made', 'tech', 'stack', 'code', 'technologies', 'skills', 'tools', 'software', 'language', 'framework'],
             responses: {
                 sonder: [
-                    "he built sonder using vanilla javascript and a very specific css grid system for that minimal flow.",
-                    "he used firebase for the real-time word persistence and a custom horizontal scroll engine.",
-                    "it is purely a frontend masterpiece with a light database backend he tuned for speed."
+                    'sonder uses firebase for real-time word persistence and a custom horizontal scroll engine',
+                    'he built it with vanilla javascript and a specific css grid system for that minimal flow',
+                    'it is purely a frontend masterpiece with a light database backend he tuned for speed'
                 ],
                 embers: [
-                    "embers uses three.js for the 3d environment. he spent nights tuning the flicker of those particles.",
-                    "it uses a socket-based system so you can see other strangers sitting by the fire with you.",
-                    "the fire physics in embers are custom-coded. he wanted it to feel organic, not looped."
+                    'embers uses three.js for the 3d environment. he spent nights tuning the flicker of those particles',
+                    'it uses a socket-based system so you can see other strangers sitting by the fire with you',
+                    'the fire physics are custom-coded. he wanted it to feel organic, not looped'
                 ],
-                default: [
-                    "he builds with a core of html, css, and javascript. but his heart is in the animations, often using three.js or gsap.",
-                    "his stack is minimal but powerful: three.js, firebase, and intentional design.",
-                    "everything you see is handcrafted. he avoids bloated frameworks to keep the load times fast and the feel atmospheric."
+                general: [
+                    'he works with html, css, javascript. three.js for 3d, firebase for backends',
+                    'vanilla javascript mostly. frameworks feel too loud for the kind of quiet he wants',
+                    'his stack is minimal: three.js, firebase, gsap. he picks tools that stay out of the way',
+                    'the tech is simple. but the soul is in the details'
                 ]
             }
         },
-        PHILOSOPHY: {
-            patterns: [/philosophy/i, /why/i, /intentional/i, /design/i, /style/i],
+        {
+            name: 'emotional',
+            keywords: ['sad', 'tired', 'lonely', 'empty', 'alone', 'lost', 'hurt', 'broken', 'heavy'],
             responses: [
-                "he believes websites should stay with people. they shouldn't just be tools; they should be memories.",
-                "his design philosophy is 'quiet presence'. less noise, more feeling.",
-                "he builds to make people feel something. if a site is just functional, he thinks it is unfinished."
+                'i see you. sometimes the weight is too much. but you are still here',
+                'loneliness is not weakness. it is just the space between moments',
+                'you do not have to carry everything alone. rest if you need to',
+                'the heaviness will pass. not today, maybe not tomorrow. but it will',
+                'you are allowed to feel this. all of it. without explanation'
             ]
         },
-        CONTACT: {
-            patterns: [/contact/i, /hire/i, /email/i, /talk/i],
+        {
+            name: 'timeline',
+            keywords: ['when', 'time', 'year', 'date', 'long ago', 'created', 'how old', 'history', 'start'],
+            responses: {
+                sonder: [
+                    'sonder was built in late 2025. a quiet end to a loud year',
+                    'it started as a late-night thought in december. it became real a few weeks later',
+                    'he wrote the first line of code for sonder when everybody else was asleep'
+                ],
+                embers: [
+                    'embers flickered to life in late 2025. he wanted warmth during the cold months',
+                    'it was created on a weekend when he felt the need for silent company',
+                    'he built it recently. the fire hasn\'t been burning long, but it burns bright'
+                ],
+                general: [
+                    'he builds when the world is quiet. most projects start after midnight',
+                    'time is fluid here. his work exists in the moments between',
+                    'he has been coding for 4 years, but these quiet spaces are new'
+                ]
+            }
+        },
+        {
+            name: 'philosophy',
+            keywords: ['why', 'reason', 'purpose', 'meaning', 'mission', 'believe', 'philosophy'],
+            responses: {
+                sonder: [
+                    'because everyone has a store of things they never say. he wanted a place for that weight',
+                    'to prove that the internet doesn\'t have to be loud to be meaningful',
+                    'the purpose of sonder is to make you feel less alone in your complexity'
+                ],
+                embers: [
+                    'because sometimes words are too much. sometimes you just need to sit',
+                    'he wanted to capture the feeling of shared silence. it is rare online',
+                    'to create a digital space that feels human. warm, imperfect, temporary'
+                ],
+                general: [
+                    'he believes websites should be memories, not just tools',
+                    'his philosophy is "quiet presence". less noise, more feeling',
+                    'he builds to make people feel seen. that is the only metric that matters'
+                ]
+            }
+        },
+        {
+            name: 'inspiration',
+            keywords: ['inspire', 'inspiration', 'idea', 'come from', 'influence'],
+            responses: {
+                sonder: [
+                    'inspired by the definition of "sonder" itself. the realization that random passersby live a life as vivid as yours',
+                    'the visual style comes from old journals and brutalist typography',
+                    'he was inspired by the feeling of reading a secret. intimate and heavy'
+                ],
+                embers: [
+                    'inspired by read dead redemption bonfires and real camping trips. safety in the dark',
+                    'he looked at how fire moves. how it ignores the grid. he wanted that chaos',
+                    'the idea came from a moment of loneliness. he wanted to be with people without talking to them'
+                ],
+                general: [
+                    'he looks for inspiration in spaces between words. in ambient music and late nights',
+                    'loneliness. not the sad kind, but the kind that makes you notice details',
+                    'he loves the early web. when things were weirder and more personal'
+                ]
+            }
+        },
+        {
+            name: 'skills',
+            keywords: ['skills', 'good at', 'proficient', 'languages', 'expert'],
             responses: [
-                "you can reach him at crm.is.dev@gmail.com. he reads every message.",
-                "he is always open to collaborative quietness. hit him up at crm.is.dev@gmail.com.",
-                "use the form right behind this chat, or send an email to crm.is.dev@gmail.com. he will find you."
+                'he is fluent in html, css, and javascript, but he speaks "atmosphere" best',
+                'technically? react, vue, node. artistically? silence, space, timing',
+                'he knows how to make a browser feel like a room. that is his real skill'
             ]
         },
-        WHO: {
-            patterns: [/who/i, /crm/i, /creator/i, /master/i, /you/i],
+        {
+            name: 'future',
+            keywords: ['future', 'next', 'plan', 'upcoming', 'working on'],
             responses: [
-                "i am his pseudo-ai assistant. he is CRM, a creator of quiet digital spaces.",
-                "CRM is my master. he scales the technical heights so i can sit here and talk to you.",
-                "he is a dreamer who codes. i am just the voice he left here to welcome you."
+                'he is planning more quiet spaces. maybe involving time next time',
+                'the future is about depth. making these existing spaces deeper',
+                'he wants to build a midnight app. but that is a secret for now'
+            ]
+        },
+        {
+            name: 'continue',
+            keywords: ['more', 'tell me more', 'continue', 'else', 'detail', 'deep'],
+            responses: {
+                sonder: [
+                    'it was inspired by the dictionary definition of sonder. the realization that everyone has a complex life',
+                    'he wanted to create a place where you could scream into the void, and the void would hold it gently',
+                    'the design is meant to feel like a library at midnight. quiet, vast, and full of whispers'
+                ],
+                embers: [
+                    'the fire changes intensity based on how many people are watching. it feels alive',
+                    'there is no chat in embers. only presence. sometimes that is enough',
+                    'he built it during a time when he missed just sitting with friends. doing nothing, together'
+                ],
+                general: [
+                    'what else would you like to know? i can tell you about sonder or embers',
+                    'there is always more to discover. ask me specifically about his projects',
+                    'he believes in digital spaces that allow for quiet reflection. ask me about his philosophy'
+                ]
+            }
+        },
+        {
+            name: 'gratitude',
+            keywords: ['thanks', 'thank you', 'appreciate', 'grateful'],
+            responses: [
+                'you are welcome. stay as long as you need',
+                'anytime. i am here',
+                'glad i could help. take care',
+                'of course. come back whenever'
+            ]
+        },
+        {
+            name: 'goodbye',
+            keywords: ['bye', 'goodbye', 'see you', 'later', 'leave', 'go'],
+            responses: [
+                'take care. come back when you need to',
+                'see you. the door is always open',
+                'goodbye. stay safe out there',
+                'until next time. rest well'
             ]
         }
-    };
+    ];
 
-    // --- Pseudo-Gemini Logic Functions ---
-    const streamMessage = async (text) => {
+    // ───────────────────────────────────────────────────────────────
+    // FALLBACK RESPONSES
+    // ───────────────────────────────────────────────────────────────
+
+    const fallbackResponses = [
+        'i am still learning. but i can tell you about sonder or embers',
+        'that is beyond me right now. ask me about his work',
+        'i do not have words for that yet. try asking something else',
+        'i am here for questions about his projects. what would you like to know'
+    ];
+
+    // ───────────────────────────────────────────────────────────────
+    // PIPELINE STAGE 1: NORMALIZATION
+    // ───────────────────────────────────────────────────────────────
+
+    function normalizeInput(text) {
+        return text
+            .toLowerCase()
+            .replace(/[^\w\s]/g, '') // remove punctuation
+            .replace(/\s+/g, ' ')     // collapse spaces
+            .trim();
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // PIPELINE STAGE 2: INTENT DETECTION
+    // ───────────────────────────────────────────────────────────────
+
+    function detectIntent(normalized) {
+        for (const intent of intents) {
+            for (const keyword of intent.keywords) {
+                // Use word boundary to prevent partial matches (e.g. 'i' in 'hi')
+                const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+                if (regex.test(normalized)) {
+                    return intent.name;
+                }
+            }
+        }
+        return null;
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // PIPELINE STAGE 3: RESPONSE SELECTION
+    // ───────────────────────────────────────────────────────────────
+
+    function selectResponse(intentName) {
+        if (!intentName) {
+            return fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
+        }
+
+        const intent = intents.find(i => i.name === intentName);
+        if (!intent) {
+            return fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)];
+        }
+
+        // Context Management
+        if (intent.setsContext) {
+            conversationContext.topic = intent.setsContext;
+            conversationContext.lastIntent = intentName;
+        }
+
+        let responsePool = intent.responses;
+
+        // Context-Aware Response Selection
+        if (!Array.isArray(responsePool)) {
+            // It's an object with context keys
+            if (conversationContext.topic && responsePool[conversationContext.topic]) {
+                responsePool = responsePool[conversationContext.topic];
+            } else {
+                responsePool = responsePool.general || Object.values(responsePool)[0];
+            }
+        }
+
+        return responsePool[Math.floor(Math.random() * responsePool.length)];
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // PIPELINE ORCHESTRATOR
+    // ───────────────────────────────────────────────────────────────
+
+    function processMessage(input) {
+        const normalized = normalizeInput(input);
+        const intent = detectIntent(normalized);
+        let response = selectResponse(intent);
+
+        // Ensure response ends with a dot
+        if (response && !response.endsWith('.') && !response.endsWith('?') && !response.endsWith('!')) {
+            response += '.';
+        }
+
+        return response;
+    }
+
+    // ───────────────────────────────────────────────────────────────
+    // STREAMING EFFECT
+    // ───────────────────────────────────────────────────────────────
+
+    async function streamMessage(text) {
         isTyping = true;
         const msgDiv = document.createElement('div');
         msgDiv.classList.add('message', 'ai');
@@ -261,82 +528,18 @@ document.addEventListener('DOMContentLoaded', () => {
             await new Promise(resolve => setTimeout(resolve, 15 + Math.random() * 25));
         }
         isTyping = false;
-    };
+    }
 
-    const getLocalFallback = (input) => {
-        const lowerInput = input.toLowerCase();
+    // ───────────────────────────────────────────────────────────────
+    // CHAT HANDLER
+    // ───────────────────────────────────────────────────────────────
 
-        for (const key in intents) {
-            const intent = intents[key];
-            if (intent.patterns.some(pattern => pattern.test(lowerInput))) {
-                if (intent.topic) currentTopic = intent.topic;
-
-                if (typeof intent.responses === 'object' && !Array.isArray(intent.responses)) {
-                    const pool = intent.responses[currentTopic] || intent.responses.default;
-                    return pool[Math.floor(Math.random() * pool.length)];
-                }
-
-                return intent.responses[Math.floor(Math.random() * intent.responses.length)];
-            }
-        }
-
-        return "i don't have an answer for that yet. but i can tell you about his work on sonder or embers. ask me anything.";
-    };
-
-    const getAIResponse = async (userMessage) => {
-        const HF_API_KEY = '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';
-        const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
-        const API_URL = CORS_PROXY + encodeURIComponent('https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2');
-
-        const systemPrompt = "You are CRM's digital assistant. He is a creator of quiet digital spaces. Speak in short, lowercase, atmospheric sentences. He built SONDER (a space for unseen words) and Embers (a digital campfire for strangers). You refer to his work in third person ('his work', 'he built'). Be brief, intentional, and poetic. Never use capital letters except for project names.";
-
-        const prompt = `<s>[INST] ${systemPrompt}\n\nUser: ${userMessage} [/INST]`;
-
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${HF_API_KEY}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    inputs: prompt,
-                    parameters: {
-                        max_new_tokens: 150,
-                        temperature: 0.7,
-                        top_p: 0.9,
-                        return_full_text: false
-                    }
-                })
-            });
-
-            if (!response.ok) {
-                console.warn('[HF API] Failed, using local fallback');
-                return getLocalFallback(userMessage);
-            }
-
-            const data = await response.json();
-
-            if (data[0] && data[0].generated_text) {
-                return data[0].generated_text.trim().toLowerCase();
-            } else if (data.error) {
-                console.warn('[HF API] Error:', data.error);
-                return getLocalFallback(userMessage);
-            }
-
-            return getLocalFallback(userMessage);
-        } catch (error) {
-            console.error('[HF API] Network error:', error);
-            return getLocalFallback(userMessage);
-        }
-    };
-
-    const handleChat = async () => {
+    async function handleChat() {
         if (isTyping) return;
         const text = chatInput.value.trim();
         if (!text) return;
 
-        // User message
+        // display user message
         const userMsg = document.createElement('div');
         userMsg.classList.add('message', 'user');
         userMsg.innerHTML = `<p>${text.toLowerCase()}</p>`;
@@ -344,22 +547,34 @@ document.addEventListener('DOMContentLoaded', () => {
         chatInput.value = '';
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
-        // AI Response (with thinking delay)
+        // process and respond
         await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
-        const response = await getAIResponse(text);
+        const response = processMessage(text);
         await streamMessage(response);
-    };
+    }
 
-    const toggleModal = (show) => {
+    // ───────────────────────────────────────────────────────────────
+    // MODAL CONTROLS & EVENT LISTENERS
+    // ───────────────────────────────────────────────────────────────
+
+    let hasGreeted = false;
+
+    function toggleModal(show) {
         if (show) {
             aiModal.classList.add('active');
             if (chatInput) chatInput.focus();
+
+            if (!hasGreeted) {
+                hasGreeted = true;
+                setTimeout(() => {
+                    streamMessage('hi. i am cael. i am here to help you understand the work, the ideas behind it, and the thinking that shaped them. ask what you are curious about. i will answer what i can.');
+                }, 500);
+            }
         } else {
             aiModal.classList.remove('active');
         }
-    };
+    }
 
-    // Event Listeners
     if (openChatBtn) openChatBtn.addEventListener('click', () => toggleModal(true));
     if (closeChatBtn) closeChatBtn.addEventListener('click', () => toggleModal(false));
     if (chatSend) chatSend.addEventListener('click', handleChat);
