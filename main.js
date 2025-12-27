@@ -298,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
             keywords: ['when', 'time', 'year', 'date', 'long ago', 'created', 'how old', 'history', 'start'],
             responses: {
                 sonder: [
-                    'sonder was built in late 2025. a quiet end to a loud year',
+                    'sonder was built in early 2025. a quiet end to a loud year',
                     'it started as a late-night thought in december. it became real a few weeks later',
                     'he wrote the first line of code for sonder when everybody else was asleep'
                 ],
@@ -385,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ],
                 embers: [
                     'the fire changes intensity based on how many people are watching. it feels alive',
-                    'there is no chat in embers. only presence. sometimes that is enough',
+                    'there is no forever in embers. only presence. sometimes that is enough',
                     'he built it during a time when he missed just sitting with friends. doing nothing, together'
                 ],
                 general: [
@@ -562,7 +562,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleModal(show) {
         if (show) {
             aiModal.classList.add('active');
-            if (chatInput) chatInput.focus();
+            // Delay focus to ensure transition completes and element is visible
+            setTimeout(() => {
+                if (chatInput) chatInput.focus();
+            }, 100);
 
             if (!hasGreeted) {
                 hasGreeted = true;
@@ -591,22 +594,53 @@ document.addEventListener('DOMContentLoaded', () => {
     // Contact Form Handler
     const contactForm = document.getElementById('contact-form');
     if (contactForm) {
-        contactForm.addEventListener('submit', (e) => {
+        contactForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const name = document.getElementById('name').value;
-            const message = document.getElementById('message').value;
-            const subject = encodeURIComponent(`Portfolio Inquiry from ${name}`);
-            const body = encodeURIComponent(message);
-            window.location.href = `mailto:crm.is.dev@gmail.com?subject=${subject}&body=${body}`;
-
-            // Temporary feedback
             const btn = contactForm.querySelector('.submit-btn');
             const originalText = btn.innerText;
-            btn.innerText = 'Redirecting...';
-            setTimeout(() => {
-                btn.innerText = 'Send Message';
-                contactForm.reset();
-            }, 3000);
+            const successModal = document.getElementById('success-modal');
+            const closeModalBtn = document.getElementById('close-success');
+
+            btn.innerText = 'Sending...';
+            btn.disabled = true;
+
+            const formData = new FormData(contactForm);
+
+            try {
+                const response = await fetch(contactForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    // Success State
+                    contactForm.reset();
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+
+                    // Show Modal
+                    if (successModal) successModal.classList.add('active');
+                } else {
+                    throw new Error('Network response was not ok');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                btn.innerText = 'Error - Try Again';
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }, 3000);
+            }
+
+            // Close Modal Logic
+            if (closeModalBtn) {
+                closeModalBtn.onclick = () => {
+                    if (successModal) successModal.classList.remove('active');
+                };
+            }
         });
     }
 

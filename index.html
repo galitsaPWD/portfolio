@@ -84,8 +84,9 @@
                             <p>A minimalist digital experience exploring the ephemeral nature of light and shadow, where
                                 every spark tells a story.</p>
                             <div class="tech-tags">
-                                <span class="tech-tag">Interactive</span>
-                                <span class="tech-tag">Experience</span>
+                                <span class="tech-tag">Three.js</span>
+                                <span class="tech-tag">Firebase</span>
+                                <span class="tech-tag">Web Audio API</span>
                             </div>
                         </div>
                     </article>
@@ -115,22 +116,42 @@
         <section id="contact">
             <h2>Get In Touch</h2>
             <div class="contact-container">
-                <form id="contact-form">
+                <form id="contact-form" action="https://formspree.io/f/xkonjjay" method="POST">
+
+
                     <div class="form-group">
-                        <input type="text" id="name" class="form-input" placeholder=" " required>
+                        <input type="text" id="name" name="name" class="form-input" placeholder=" " required>
                         <label for="name" class="form-label">Name</label>
                     </div>
                     <div class="form-group">
-                        <input type="email" id="email" class="form-input" placeholder=" " required>
+                        <input type="email" id="email" name="email" class="form-input" placeholder=" " required>
                         <label for="email" class="form-label">Email</label>
                     </div>
                     <div class="form-group">
-                        <textarea id="message" class="form-input" placeholder=" " required></textarea>
+                        <textarea id="message" name="message" class="form-input" placeholder=" " required></textarea>
                         <label for="message" class="form-label">Message</label>
                     </div>
                     <button type="submit" class="submit-btn cursor-hover">Send Message</button>
+                    <p class="form-status"></p>
                 </form>
+
             </div>
+        </section>
+
+        <!-- Success Modal -->
+        <div class="success-modal" id="success-modal">
+            <div class="success-content">
+                <div class="success-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path class="check-path" d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <h3>Message Sent</h3>
+                <p>Thank you for reaching out. I'll get back to you shortly.</p>
+                <button id="close-success" class="btn secondary cursor-hover">Close</button>
+            </div>
+        </div>
+        </div>
         </section>
 
         <!-- AI Chat Modal -->
