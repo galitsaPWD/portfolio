@@ -55,19 +55,24 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('resize', handleResize);
 
         // Hide Loader on Window Load
-        window.addEventListener('load', () => {
+        const hideLoader = () => {
             const loader = document.getElementById('loader');
-            if (loader) {
+            if (loader && loader.style.visibility !== 'hidden') {
+                loader.style.opacity = '0';
                 setTimeout(() => {
-                    loader.style.opacity = '0';
-                    setTimeout(() => {
-                        loader.style.visibility = 'hidden';
-                        cleanupLoader(); // Kill the 3D process
-                        window.removeEventListener('resize', handleResize);
-                    }, 500);
-                }, 1500); // Keep it visible for at least 1.5s to show off effect
+                    loader.style.visibility = 'hidden';
+                    cleanupLoader();
+                    window.removeEventListener('resize', handleResize);
+                }, 500);
             }
+        };
+
+        window.addEventListener('load', () => {
+            setTimeout(hideLoader, 1500);
         });
+
+        // Fallback: Hide loader after 3 seconds regardless
+        setTimeout(hideLoader, 3000);
     };
     initLoader3D();
 
@@ -84,6 +89,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const initThreeJS = () => {
         const canvas = document.querySelector('#hero-canvas');
         if (!canvas) return;
+
+        // Scroll Smoothing Variables
+        let targetScrollY = 0;
+        let currentScrollY = 0;
 
         const scene = new THREE.Scene();
         // Fog for depth (Black ending)
@@ -220,6 +229,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
             camera.lookAt(scene.position);
 
+            // SCROLL SMOOTHING LOGIC
+            // Lerp current towards target
+            currentScrollY += (targetScrollY - currentScrollY) * 0.08; // Smoother response
+
+            // Apply transforms based on currentScrollY
+            sphere.position.y = currentScrollY * 0.05;
+            sphere.rotation.x = currentScrollY * 0.002 + (-mouseY * 0.1); // Combined with mouse
+            sphere.rotation.z = currentScrollY * 0.002;
+
+            const zoom = Math.min(currentScrollY * 0.05, 40);
+            // Apply zoom to camera Z, but coordinate with initial position
+            // We'll just override the Z here carefully or add to it.
+            // Previous logic: camera.position.z = 50 - zoom;
+            // But we also have mouse parallax on camera.position.x/y
+
+            // Let's use a base Z
+            const baseZ = 50;
+            camera.position.z = baseZ - zoom;
+
+            // Background rotation
+            // particleSystem.rotation.y += 0.0005; // Auto rotate (kept from original)
+            // PLUS scroll rotation
+            particleSystem.rotation.y = (currentScrollY * 0.0002) + (Date.now() * 0.00005);
+            // Note: Mixing auto-rotation and scroll-rotation directly like this might be jumpy if we don't accumulate.
+            // Original code:
+            // particleSystem.rotation.y += 0.0005; (lines 214)
+            // AND
+            // particleSystem.rotation.y = scrollY * 0.0002; (lines 248) -> This OVERRODE the auto-rotation in the scroll listener!
+
+            // So the original code actually RESET rotation on every scroll event to `scrollY * 0.0002`.
+            // When not scrolling, it would spin `+= 0.0005`.
+            // When scrolling, it would snap to `scrollY * factor`.
+            // That explains some jitteriness too!
+
+            // Let's implement a consistent rotation: Auto-rotate + Scroll Offset.
+            // Since `rotation.y` is stateful, we can't easily do `base + offset` unless we track base.
+            // Alternative: Just let scroll influence speed? 
+            // The user wants "smoothen the circle" (sphere). Background nodes are secondary but relevant.
+
+            // Let's stick to the Sphere smoothing mainly.
+            // For the Background nodes rotation: The original `particleSystem.rotation.y = scrollY * 0.0002` suggests they wanted it tied to scroll.
+            // I will respect that but use `currentScrollY`.
+
+            particleSystem.rotation.y = currentScrollY * 0.0002 + (Date.now() * 0.00005);
+
+
             renderer.render(scene, camera);
         };
 
@@ -229,23 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 1. Sphere behaves like Hero Content (Scrolls UP and away)
         // 2. Background behaves like Fixed Global (Zooms smoothly)
         window.addEventListener('scroll', () => {
-            const scrollY = window.scrollY;
-
-            // Move Sphere UP to simulate it scrolling away with the hero section
-            // Factor 0.05 is calibrated to match scroll speed roughly
-            sphere.position.y = scrollY * 0.05;
-
-            // Rotate Sphere for flair
-            sphere.rotation.x = scrollY * 0.002;
-            sphere.rotation.z = scrollY * 0.002;
-
-            // Background Zoom Effect (Camera moves forward)
-            // We clamp it so it doesn't go too far
-            const zoom = Math.min(scrollY * 0.05, 40); // Cap zoom at 40 units
-            camera.position.z = 50 - zoom;
-
-            // Subtle rotation for network
-            particleSystem.rotation.y = scrollY * 0.0002;
+            targetScrollY = window.scrollY;
         });
 
         window.addEventListener('resize', () => {
@@ -878,3 +917,5 @@ if (ctaBtn) {
         }
     });
 }
+
+

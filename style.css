@@ -1,7 +1,7 @@
 :root {
     --bg-color: #080808;
     --text-primary: #ffffff;
-    --text-secondary: #888888;
+    --text-secondary: #999999;
     --accent-cyan: #e0e0e0;
     --accent-violet: #333333;
     --glass-bg: rgba(255, 255, 255, 0.03);
@@ -182,6 +182,7 @@ ul {
     color: var(--text-primary);
     line-height: 1.1;
     letter-spacing: -0.02em;
+    margin-bottom: 0.5rem;
 }
 
 h2 {
@@ -1120,4 +1121,64 @@ footer {
     50% {
         opacity: 1;
     }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   ACCESSIBILITY - FOCUS STATES
+   ────────────────────────────────────────────────────────────── */
+
+/* Global focus-visible for modern browsers (hides focus on mouse click, shows on keyboard) */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+.project-card:focus-visible,
+.skill-item:focus-visible {
+    outline: 2px solid var(--accent-cyan);
+    outline-offset: 4px;
+    border-radius: 2px;
+}
+
+/* Navigation links */
+.nav-links a:focus-visible {
+    outline-offset: 2px;
+}
+
+/* Project cards - focus-within for when link is focused */
+.project-link:focus-visible .project-card {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 0 2px var(--accent-cyan), 0 10px 30px rgba(255, 255, 255, 0.1);
+    transform: translateY(-10px);
+}
+
+/* Buttons */
+.cta-button:focus-visible,
+.submit-btn:focus-visible,
+#chat-send:focus-visible,
+.btn:focus-visible {
+    outline: 2px solid var(--accent-cyan);
+    outline-offset: 3px;
+}
+
+/* Form inputs - override default focus to match design */
+.form-input:focus {
+    outline: none;
+    border-color: var(--accent-cyan);
+    box-shadow: 0 2px 8px rgba(224, 224, 224, 0.1);
+}
+
+/* Skill items */
+.skill-item:focus-visible {
+    border-color: var(--accent-cyan);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.15);
+}
+
+/* Social icons */
+.social-links a:focus-visible {
+    outline-offset: 3px;
+}
+
+/* Remove default outline for mouse users (focus-visible handles keyboard) */
+*:focus:not(:focus-visible) {
+    outline: none;
 }
