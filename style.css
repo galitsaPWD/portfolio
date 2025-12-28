@@ -790,7 +790,10 @@ footer {
 
     .ai-chat-window {
         border-radius: 20px 20px 0 0;
-        height: 60vh;
+        height: 85vh;
+        /* Taller, more immersive */
+        background: #080808 !important;
+        /* Solid Opaque - No see-through */
     }
 
     /* Mobile Performance Optimization */
@@ -799,7 +802,6 @@ footer {
     .skills-vis .skill-item,
     .contact-container,
     .btn.secondary,
-    .ai-chat-window,
     .success-content,
     footer {
         backdrop-filter: none !important;
