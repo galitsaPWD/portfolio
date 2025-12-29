@@ -1,80 +1,91 @@
-document.addEventListener('DOMContentLoaded', () => {
+// LOADER HIDING LOGIC (Independent)
+const hideLoader = () => {
+    const loader = document.getElementById('loader');
+    if (loader && loader.style.visibility !== 'hidden') {
+        loader.style.opacity = '0';
+        setTimeout(() => {
+            loader.style.visibility = 'hidden';
+            // Cleanup 3D if it was started
+            if (window._cleanupLoader) window._cleanupLoader();
+        }, 500);
+    }
+};
 
-    // 3D LOADER LOGIC
+window.addEventListener('load', () => {
+    setTimeout(hideLoader, 1500);
+});
 
-    const initLoader3D = () => {
-        const loaderCanvas = document.getElementById('loader-canvas');
-        if (!loaderCanvas) return;
+// Fallback: Hide loader after 5 seconds regardless
+setTimeout(hideLoader, 5000);
 
-        const renderer = new THREE.WebGLRenderer({ canvas: loaderCanvas, alpha: true, antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// 3D LOADER LOGIC
+const initLoader3D = () => {
+    const loaderCanvas = document.getElementById('loader-canvas');
+    if (!loaderCanvas) return;
 
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
-        camera.position.z = 5;
+    // Check if THREE is available (it should be from the CDN script above)
+    if (typeof THREE === 'undefined') {
+        console.warn('Three.js not loaded yet. Skipping 3D loader.');
+        return;
+    }
 
-        // Loader Object: Wireframe Octahedron
-        const geometry = new THREE.OctahedronGeometry(1.5, 0);
-        const material = new THREE.MeshBasicMaterial({
-            color: 0xffffff,
-            wireframe: true,
-            transparent: true,
-            opacity: 0.5
-        });
-        const loaderMesh = new THREE.Mesh(geometry, material);
-        scene.add(loaderMesh);
+    const renderer = new THREE.WebGLRenderer({ canvas: loaderCanvas, alpha: true, antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-        // Animation Loop
-        let animationId;
-        const animateLoader = () => {
-            animationId = requestAnimationFrame(animateLoader);
-            loaderMesh.rotation.x += 0.02;
-            loaderMesh.rotation.y += 0.03;
-            // Pulse effect
-            const time = Date.now() * 0.002;
-            loaderMesh.scale.setScalar(1 + Math.sin(time) * 0.1);
-            renderer.render(scene, camera);
-        };
-        animateLoader();
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.z = 5;
 
-        // Cleanup function
-        const cleanupLoader = () => {
-            cancelAnimationFrame(animationId);
-            renderer.dispose();
-            geometry.dispose();
-            material.dispose();
-        };
+    // Loader Object: Wireframe Octahedron
+    const geometry = new THREE.OctahedronGeometry(1.5, 0);
+    const material = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.5
+    });
+    const loaderMesh = new THREE.Mesh(geometry, material);
+    scene.add(loaderMesh);
 
-        // Window Resize for Loader
-        const handleResize = () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        };
-        window.addEventListener('resize', handleResize);
-
-        // Hide Loader on Window Load
-        const hideLoader = () => {
-            const loader = document.getElementById('loader');
-            if (loader && loader.style.visibility !== 'hidden') {
-                loader.style.opacity = '0';
-                setTimeout(() => {
-                    loader.style.visibility = 'hidden';
-                    cleanupLoader();
-                    window.removeEventListener('resize', handleResize);
-                }, 500);
-            }
-        };
-
-        window.addEventListener('load', () => {
-            setTimeout(hideLoader, 1500);
-        });
-
-        // Fallback: Hide loader after 3 seconds regardless
-        setTimeout(hideLoader, 3000);
+    // Animation Loop
+    let animationId;
+    const animateLoader = () => {
+        animationId = requestAnimationFrame(animateLoader);
+        loaderMesh.rotation.x += 0.02;
+        loaderMesh.rotation.y += 0.03;
+        // Pulse effect
+        const time = Date.now() * 0.002;
+        loaderMesh.scale.setScalar(1 + Math.sin(time) * 0.1);
+        renderer.render(scene, camera);
     };
+    animateLoader();
+
+    // Export Cleanup function for hideLoader
+    window._cleanupLoader = () => {
+        cancelAnimationFrame(animationId);
+        renderer.dispose();
+        geometry.dispose();
+        material.dispose();
+    };
+
+    // Window Resize for Loader
+    const handleResize = () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+    window.addEventListener('resize', handleResize);
+};
+
+// Start 3D Loader safely
+try {
     initLoader3D();
+} catch (error) {
+    console.error('3D Loader initialization error:', error);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
 
     // Scroll Lines Parallax
     const scrollLines = document.querySelector('.scroll-lines');
@@ -355,6 +366,17 @@ document.addEventListener('DOMContentLoaded', () => {
         el.style.transform = 'translateY(20px)';
         el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
         observer.observe(el);
+
+        // Interactive Glow for Project Cards
+        if (el.classList.contains('project-card')) {
+            el.addEventListener('mousemove', (e) => {
+                const rect = el.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                el.style.setProperty('--mouse-x', `${x}%`);
+                el.style.setProperty('--mouse-y', `${y}%`);
+            });
+        }
     });
 
     // Dedicated Title Glow Observer
@@ -687,18 +709,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-    function processMessage(input) {
-        const normalized = normalizeInput(input);
-        const intent = detectIntent(normalized);
-        let response = selectResponse(intent);
-
-        // Ensure response ends with a dot
-        if (response && !response.endsWith('.') && !response.endsWith('?') && !response.endsWith('!')) {
-            response += '.';
-        }
-
-        return response;
-    }
+    // processMessage removed, logic moved into handleChat for async/await flow
 
     // ───────────────────────────────────────────────────────────────
     // STREAMING EFFECT
@@ -722,8 +733,47 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ───────────────────────────────────────────────────────────────
-    // CHAT HANDLER
+    // CHAT HANDLER (With API Fallback)
     // ───────────────────────────────────────────────────────────────
+
+    async function getAIFallback(input) {
+        // Retrieve the API key from localStorage for security
+        // Use console command: localStorage.setItem('hf_api_key', 'your_key') to set it
+        const apiKey = localStorage.getItem('hf_api_key');
+        if (!apiKey) return null;
+
+        console.log('[AI API] Attempting fetch for:', input);
+        try {
+            const response = await fetch(
+                "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
+                {
+                    headers: {
+                        "Authorization": `Bearer ${apiKey}`,
+                        "Content-Type": "application/json"
+                    },
+                    method: "POST",
+                    body: JSON.stringify({
+                        inputs: `[INST] context: you are cael, the quiet and minimal ai assistant for carlwyne's portfolio. his projects are sonder (poetry map) and embers (3d campfire). your tone is always lowercase, atmospheric, and brief. never use emoji. visitor asks: ${input} [/INST]`,
+                        parameters: { max_new_tokens: 60, temperature: 0.7 }
+                    }),
+                }
+            );
+
+            if (!response.ok) {
+                console.warn('[AI API] Response not OK:', response.status, response.statusText);
+                return null;
+            }
+
+            const result = await response.json();
+            if (result && result[0] && result[0].generated_text) {
+                let text = result[0].generated_text.split('[/INST]').pop().trim();
+                return text.toLowerCase();
+            }
+        } catch (error) {
+            console.error("[AI API] Error during fetch:", error);
+        }
+        return null;
+    }
 
     async function handleChat() {
         if (isTyping) return;
@@ -740,7 +790,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // process and respond
         await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
-        const response = processMessage(text);
+
+        const normalized = normalizeInput(text);
+        const intent = detectIntent(normalized);
+        let response;
+
+        if (intent) {
+            // Use hardcoded response if intent is matched
+            response = selectResponse(intent);
+        } else {
+            // Try API Fallback for unknown queries
+            const apiResponse = await getAIFallback(text);
+            if (apiResponse) {
+                response = apiResponse;
+            } else {
+                // Final fallback if API fails or no key
+                response = selectResponse(null);
+            }
+        }
+
+        // Ensure response ends with a dot
+        if (response && !response.endsWith('.') && !response.endsWith('?') && !response.endsWith('!')) {
+            response += '.';
+        }
+
         await streamMessage(response);
     }
 

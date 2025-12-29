@@ -18,6 +18,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="style.css">
+
+    <!-- Emergency Service Worker Fix (Ghost sw.js overwrite) -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            // First, kill any existing ones
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                for (let registration of registrations) {
+                    registration.unregister();
+                }
+                // Then register our neutral one
+                navigator.serviceWorker.register('sw.js').then(() => {
+                    console.log('Neutral Service Worker active. Environment cleaned.');
+                });
+            });
+        }
+    </script>
 </head>
 
 <body>
@@ -189,7 +205,7 @@
         </div>
 
         <footer>
-            <p>&copy; 2025 CRM Portfolio. All systems nominal.</p>
+            <p>&copy; 2025 CRM Portfolio. All Rights Reserved.</p>
             <div class="social-links">
                 <a href="https://github.com/galitsaPWD" target="_blank" aria-label="GitHub">
                     <svg class="social-icon" viewBox="0 0 24 24">
