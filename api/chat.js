@@ -18,7 +18,7 @@ export default async function handler(req, res) {
 
     try {
         const response = await fetch(
-            "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3",
+            "https://router.huggingface.co/hf-inference/v1/chat/completions",
             {
                 headers: {
                     "Authorization": `Bearer ${apiKey}`,
@@ -26,8 +26,13 @@ export default async function handler(req, res) {
                 },
                 method: "POST",
                 body: JSON.stringify({
-                    inputs: `[INST] context: you are cael, the quiet and minimal ai assistant for carlwyne's portfolio. your tone is always lowercase, atmospheric, and brief. never use emoji. visitor asks: ${message} [/INST]`,
-                    parameters: { max_new_tokens: 60, temperature: 0.7 }
+                    model: "mistralai/Mistral-7B-Instruct-v0.3",
+                    messages: [
+                        { role: "system", content: "you are cael, the quiet and minimal ai assistant for carlwyne's portfolio. your tone is always lowercase, atmospheric, and brief. never use emoji. don't use capital letters." },
+                        { role: "user", content: message }
+                    ],
+                    max_tokens: 60,
+                    temperature: 0.7
                 }),
             }
         );
@@ -38,12 +43,13 @@ export default async function handler(req, res) {
             console.error('[Proxy] HF Error:', response.status, data);
             return res.status(response.status).json({
                 error: `Hugging Face Error: ${response.status}`,
-                details: data.error || data.message || 'Unknown error'
+                details: data.error || data.message || 'Check model availability'
             });
         }
 
-        if (Array.isArray(data) && data[0]?.generated_text) {
-            let text = data[0].generated_text.split('[/INST]').pop().trim();
+        // OpenAI-style response: data.choices[0].message.content
+        if (data.choices && data.choices[0]?.message?.content) {
+            let text = data.choices[0].message.content.trim();
             return res.status(200).json({ response: text.toLowerCase() });
         } else {
             return res.status(500).json({ error: 'Unexpected response format', data });
