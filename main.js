@@ -746,7 +746,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!response.ok) {
-                console.warn('[AI API] Proxy error:', response.status);
+                const errData = await response.json().catch(() => ({}));
+                console.warn('[AI API] Proxy error:', response.status, errData.error || '');
                 return null;
             }
 

@@ -29,17 +29,23 @@ export default async function handler(req, res) {
             }
         );
 
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            return res.status(response.status).json({
+                error: `Hugging Face API Error: ${response.status}`,
+                details: errData
+            });
+        }
+
         const result = await response.json();
 
-        // Hugging Face result structure: [{ generated_text: "..." }]
         if (result && result[0] && result[0].generated_text) {
             let text = result[0].generated_text.split('[/INST]').pop().trim();
             return res.status(200).json({ response: text.toLowerCase() });
         } else {
-            return res.status(500).json({ error: 'Invalid response from AI model' });
+            return res.status(500).json({ error: 'Invalid response from AI model', result });
         }
     } catch (error) {
-        console.error('Proxy Error:', error);
-        return res.status(500).json({ error: 'Failed to reach AI service' });
+        return res.status(500).json({ error: `Proxy Crash: ${error.message}` });
     }
 }
