@@ -779,18 +779,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const intent = detectIntent(normalized);
         let response;
 
-        if (intent) {
-            // Use hardcoded response if intent is matched
+        // --- AI-FIRST STRATEGY ---
+        // 1. Try the smart AI brain first
+        const apiResponse = await getAIFallback(text);
+
+        if (apiResponse) {
+            response = apiResponse;
+        } else if (intent) {
+            // 2. If API fails, use specific hardcoded intent if matched
             response = selectResponse(intent);
         } else {
-            // Try API Fallback for unknown queries
-            const apiResponse = await getAIFallback(text);
-            if (apiResponse) {
-                response = apiResponse;
-            } else {
-                // Final fallback if API fails or no key
-                response = selectResponse(null);
-            }
+            // 3. Final generic fallback
+            response = selectResponse(null);
         }
 
         // Ensure response ends with a dot
