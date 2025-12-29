@@ -26,7 +26,7 @@ export default async function handler(req, res) {
                 },
                 method: "POST",
                 body: JSON.stringify({
-                    model: "mistralai/Mistral-7B-Instruct-v0.3",
+                    model: "Qwen/Qwen2.5-72B-Instruct",
                     messages: [
                         { role: "system", content: "you are cael, the quiet and minimal ai assistant for carlwyne's portfolio. your tone is always lowercase, atmospheric, and brief. never use emoji. don't use capital letters." },
                         { role: "user", content: message }
