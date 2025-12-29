@@ -14,9 +14,9 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Use the new Inference Router endpoint instead of the legacy one
+        // Testing with gpt2 - the most basic model to verify token works
         const response = await fetch(
-            "https://router.huggingface.co/hf-inference/models/HuggingFaceH4/zephyr-7b-beta",
+            "https://router.huggingface.co/hf-inference/models/gpt2",
             {
                 headers: {
                     "Authorization": `Bearer ${apiKey}`,
