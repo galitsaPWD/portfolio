@@ -6,15 +6,17 @@ export default async function handler(req, res) {
 
     const { message } = req.body;
 
-    // Retrieve API key from environment variables
-    const apiKey = process.env.HF_API_KEY;
+    // Retrieve API key and TRIM it to avoid copy-paste spaces
+    const apiKey = process.env.HF_API_KEY?.trim();
+
+    // Log the first 4 chars of the key ONLY for diagnostics (safe)
+    console.log(`[Proxy] API Key diagnostic: ${apiKey ? apiKey.substring(0, 4) + '...' : 'MISSING'}`);
 
     if (!apiKey) {
-        return res.status(500).json({ error: 'API Key not configured on server' });
+        return res.status(500).json({ error: 'HF_API_KEY is not defined in Vercel environment variables' });
     }
 
     try {
-        // Standard API endpoint is most reliable for specific model calls
         const response = await fetch(
             "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3",
             {
@@ -30,23 +32,24 @@ export default async function handler(req, res) {
             }
         );
 
+        const data = await response.json().catch(() => ({}));
+
         if (!response.ok) {
-            const errData = await response.json().catch(() => ({}));
+            console.error('[Proxy] HF Error:', response.status, data);
             return res.status(response.status).json({
-                error: `Hugging Face API Error: ${response.status}`,
-                details: errData
+                error: `Hugging Face Error: ${response.status}`,
+                details: data.error || data.message || 'Unknown error'
             });
         }
 
-        const result = await response.json();
-
-        if (result && result[0] && result[0].generated_text) {
-            let text = result[0].generated_text.split('[/INST]').pop().trim();
+        if (Array.isArray(data) && data[0]?.generated_text) {
+            let text = data[0].generated_text.split('[/INST]').pop().trim();
             return res.status(200).json({ response: text.toLowerCase() });
         } else {
-            return res.status(500).json({ error: 'Invalid response from AI model', result });
+            return res.status(500).json({ error: 'Unexpected response format', data });
         }
     } catch (error) {
+        console.error('[Proxy] Crash:', error.message);
         return res.status(500).json({ error: `Proxy Crash: ${error.message}` });
     }
 }
