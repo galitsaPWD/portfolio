@@ -14,8 +14,9 @@ export default async function handler(req, res) {
     }
 
     try {
+        // Use the new Inference Router endpoint instead of the legacy one
         const response = await fetch(
-            "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3",
+            "https://router.huggingface.co/hf-inference/models/HuggingFaceH4/zephyr-7b-beta",
             {
                 headers: {
                     "Authorization": `Bearer ${apiKey}`,
