@@ -737,42 +737,25 @@ document.addEventListener('DOMContentLoaded', () => {
     // ───────────────────────────────────────────────────────────────
 
     async function getAIFallback(input) {
-        // Retrieve the API key from localStorage for security
-        // Use console command: localStorage.setItem('hf_api_key', 'your_key') to set it
-        const apiKey = localStorage.getItem('hf_api_key');
-        if (!apiKey) return null;
-
-        console.log('[AI API] Attempting fetch for:', input);
+        console.log('[AI API] Calling Vercel Proxy...');
         try {
-            const response = await fetch(
-                "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
-                {
-                    headers: {
-                        "Authorization": `Bearer ${apiKey}`,
-                        "Content-Type": "application/json"
-                    },
-                    method: "POST",
-                    body: JSON.stringify({
-                        inputs: `[INST] context: you are cael, the quiet and minimal ai assistant for carlwyne's portfolio. his projects are sonder (poetry map) and embers (3d campfire). your tone is always lowercase, atmospheric, and brief. never use emoji. visitor asks: ${input} [/INST]`,
-                        parameters: { max_new_tokens: 60, temperature: 0.7 }
-                    }),
-                }
-            );
+            const response = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: input })
+            });
 
             if (!response.ok) {
-                console.warn('[AI API] Response not OK:', response.status, response.statusText);
+                console.warn('[AI API] Proxy error:', response.status);
                 return null;
             }
 
             const result = await response.json();
-            if (result && result[0] && result[0].generated_text) {
-                let text = result[0].generated_text.split('[/INST]').pop().trim();
-                return text.toLowerCase();
-            }
+            return result.response || null;
         } catch (error) {
-            console.error("[AI API] Error during fetch:", error);
+            console.error("[AI API] Fetch error:", error);
+            return null;
         }
-        return null;
     }
 
     async function handleChat() {
