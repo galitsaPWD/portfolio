@@ -14,9 +14,9 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Testing with gpt2 - the most basic model to verify token works
+        // Standard API endpoint is most reliable for specific model calls
         const response = await fetch(
-            "https://router.huggingface.co/hf-inference/models/gpt2",
+            "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3",
             {
                 headers: {
                     "Authorization": `Bearer ${apiKey}`,
