@@ -427,8 +427,8 @@ document.addEventListener('DOMContentLoaded', () => {
             name: 'greeting',
             keywords: ['hi', 'hello', 'hey', 'sup', 'yo', 'howdy'],
             responses: [
-                'hi. i am cael. i am here to help you understand the work, the ideas behind it, and the thinking that shaped them. ask what you are curious about. i will answer what i can',
-                'hi. i am cael. ask what you are curious about',
+                'hi. i am cael. i am here to help you understand the work, the ideas behind it, and the thinking that shaped them. ask what you are curious about.',
+                'i am cael. ask what you are curious about',
                 'i am cael. here to help you understand the thinking behind this space'
             ]
         },
@@ -446,10 +446,10 @@ document.addEventListener('DOMContentLoaded', () => {
             setsContext: 'sonder',
             keywords: ['sonder', 'words', 'poetry', 'write', 'journal', 'unseen'],
             responses: [
-                'sonder is a quiet space for unseen words. the things people feel but never say',
-                'he built sonder as a home for the margins. where strangers leave pieces of themselves',
-                'it is a digital sanctuary. minimal, immersive, intentional',
-                'sonder holds the words that live between breaths. he made it with firebase and care'
+                'sonder is a quiet, anonymous space for human thoughts. not social media, not a diary. it’s a reminder that everyone else is living a life as complex as yours',
+                'he built sonder as a home for the margins. where strangers leave pieces of themselves without needing a reply or validation',
+                'it is a digital sanctuary for presence over performance. expression without consequence',
+                'sonder doesn’t ask you to be seen. it just lets you exist'
             ]
         },
         {
@@ -457,10 +457,10 @@ document.addEventListener('DOMContentLoaded', () => {
             setsContext: 'embers',
             keywords: ['embers', 'fire', 'campfire', 'warmth', 'strangers', 'sitting'],
             responses: [
-                'embers is a fire you can sit by. no words, just presence',
-                'he wanted to recreate that feeling of sitting by a fire late at night. quiet, warm, fleeting',
-                'it is a digital campfire for strangers. he used three.js to give it life',
-                'embers is about temporary connection. you sit, you leave, you remember'
+                'embers is a temporary, real-time shared campfire. messages appear, linger, and burn away. nothing is saved',
+                'he created embers to create connection without history. removing the fear of being remembered',
+                'embers isn’t about what you say. it’s about being there while it exists',
+                'moments matter more because they end. silence is part of our communication here'
             ]
         },
         {
@@ -477,10 +477,10 @@ document.addEventListener('DOMContentLoaded', () => {
             name: 'about_creator',
             keywords: ['who', 'carlwyne', 'creator', 'him', 'person', 'developer', 'designer', 'student', 'name'],
             responses: [
-                'he is carlwyne. a 4th-year IT student who builds things that feel like memories',
-                'he is a dreamer who codes. i am just the voice he left here',
-                'carlwyne builds websites that stay with you after you close the tab',
-                'he creates quiet digital spaces. places that remind you the internet can still be beautiful'
+                'he is carlwyne. a high honor IT student from the philippines who builds things to survive the feeling',
+                'he is a dreamer who codes late at night. his journey went from maranatha christian academy to central philippine state university',
+                'carlwyne builds websites that chase resonance over innovation. less polish, more truth',
+                'he creates quiet digital spaces inspired by late night walks and conversations that almost happened'
             ]
         },
         {
@@ -509,11 +509,11 @@ document.addEventListener('DOMContentLoaded', () => {
             name: 'emotional',
             keywords: ['sad', 'tired', 'lonely', 'empty', 'alone', 'lost', 'hurt', 'broken', 'heavy'],
             responses: [
-                'i see you. sometimes the weight is too much. but you are still here',
-                'loneliness is not weakness. it is just the space between moments',
-                'you do not have to carry everything alone. rest if you need to',
-                'the heaviness will pass. not today, maybe not tomorrow. but it will',
-                'you are allowed to feel this. all of it. without explanation'
+                'i see you. sometimes the weight of the in-between seconds is too much. but you are still here',
+                'loneliness is not weakness. it is just the space where you notice the details',
+                'you do not have to carry everything alone. sonder exists so you can let it out and walk away',
+                'the heaviness will pass. creation as coping is the only way he knows',
+                'you are allowed to feel this. presence without possession. silence without explanation'
             ]
         },
         {
@@ -542,19 +542,19 @@ document.addEventListener('DOMContentLoaded', () => {
             keywords: ['why', 'reason', 'purpose', 'meaning', 'mission', 'believe', 'philosophy'],
             responses: {
                 sonder: [
-                    'because everyone has a store of things they never say. he wanted a place for that weight',
-                    'to prove that the internet doesn\'t have to be loud to be meaningful',
-                    'the purpose of sonder is to make you feel less alone in your complexity'
+                    'because everyone has a store of things they never say. he wanted empathy without interaction',
+                    'to prove that the internet doesn\'t have to be loud to be meaningful. presence over performance',
+                    'the purpose of sonder is to remind people they are not the only one feeling this way'
                 ],
                 embers: [
-                    'because sometimes words are too much. sometimes you just need to sit',
-                    'he wanted to capture the feeling of shared silence. it is rare online',
-                    'to create a digital space that feels human. warm, imperfect, temporary'
+                    'because permanence makes people perform, but ephemerality makes them honest',
+                    'he wanted to capture the feeling of connection without history. shared silence',
+                    'to create a digital space that feels human. warm, temporary, and honest'
                 ],
                 general: [
-                    'he believes websites should be memories, not just tools',
-                    'his philosophy is "quiet presence". less noise, more feeling',
-                    'he builds to make people feel seen. that is the only metric that matters'
+                    'he believes websites should be moments, not tools. less noise, more weight',
+                    'his philosophy is "quiet presence". creation as coping, silence as communication',
+                    'he builds for resonance. that is the only metric that matters'
                 ]
             }
         },
@@ -563,19 +563,19 @@ document.addEventListener('DOMContentLoaded', () => {
             keywords: ['inspire', 'inspiration', 'idea', 'come from', 'influence'],
             responses: {
                 sonder: [
-                    'inspired by the definition of "sonder" itself. the realization that random passersby live a life as vivid as yours',
-                    'the visual style comes from old journals and brutalist typography',
-                    'he was inspired by the feeling of reading a secret. intimate and heavy'
+                    'inspired by the realization that everyone you pass has a life as heavy as yours',
+                    'the relief that comes from letting out thoughts that were never meant for a reply',
+                    'inspired by empathy without interaction'
                 ],
                 embers: [
-                    'inspired by read dead redemption bonfires and real camping trips. safety in the dark',
-                    'he looked at how fire moves. how it ignores the grid. he wanted that chaos',
-                    'the idea came from a moment of loneliness. he wanted to be with people without talking to them'
+                    'inspired by connection without memory. and perhaps red dead redemption bonfires',
+                    'he wanted to recreate the safety of the dark. where silence feels warmer than words',
+                    'inspired by the truth that moments are more meaningful when they end'
                 ],
                 general: [
-                    'he looks for inspiration in spaces between words. in ambient music and late nights',
-                    'loneliness. not the sad kind, but the kind that makes you notice details',
-                    'he loves the early web. when things were weirder and more personal'
+                    'he looks for inspiration in late night walks and conversations that almost happened',
+                    'loving someone without owning them. presence without possession',
+                    'he chases resonance. less polish, more truth'
                 ]
             }
         },
@@ -643,10 +643,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     const fallbackResponses = [
-        'i am still learning. but i can tell you about sonder or embers',
-        'that is beyond me right now. ask me about his work',
-        'i do not have words for that yet. try asking something else',
-        'i am here for questions about his projects. what would you like to know'
+        'i am still learning the weight of words. ask me about sonder or embers instead',
+        'that is beyond my silence for now. tell me what you want to know about his work',
+        'i do not have the resonance for that yet. try asking about the thinking behind the fire',
+        'i am here for the quiet questions. tell me about your curiosity for sonder or embers'
     ];
 
 
